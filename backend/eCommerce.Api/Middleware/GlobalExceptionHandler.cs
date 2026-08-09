@@ -31,6 +31,7 @@ namespace eCommerce.Api.Middleware
                     NotFoundException nf => new ErrorResponse(nf.Code, nf.Message, DateTime.UtcNow, requestId),
                     ValidationRuleException vr => new ErrorResponse(vr.Code, vr.Message, DateTime.UtcNow, requestId),
                     BusinessRuleException br => new ErrorResponse(br.Code, br.Message, DateTime.UtcNow, requestId),
+                    ConflictException ce => new ErrorResponse(ce.Code, ce.Message, DateTime.UtcNow, requestId),
                     _ => new ErrorResponse("INTERNAL_ERROR", "An unexpected error occurred", DateTime.UtcNow, requestId)
                 };
 
@@ -39,6 +40,7 @@ namespace eCommerce.Api.Middleware
                     NotFoundException => HttpStatusCode.NotFound,
                     ValidationRuleException => HttpStatusCode.BadRequest,
                     BusinessRuleException => HttpStatusCode.BadRequest,
+                    ConflictException => HttpStatusCode.Conflict,
                     _ => HttpStatusCode.InternalServerError
                 };
 

@@ -45,7 +45,7 @@ namespace eCommerce.Infrastructure.Persistence.Configurations
                 .HasForeignKey(pvov => pvov.ProductVariantId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            builder.Property(x => x.RowVersion)
+            builder.Property(x => x.Version)
                 .IsRowVersion();
         }
     }

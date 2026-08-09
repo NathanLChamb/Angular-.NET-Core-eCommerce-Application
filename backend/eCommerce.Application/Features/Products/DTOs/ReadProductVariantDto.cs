@@ -1,7 +1,4 @@
-﻿using eCommerce.Application.Features.Options.DTOs;
-using eCommerce.Application.Features.Products.Images.DTOs;
-
-namespace eCommerce.Application.Features.Products.DTOs
+﻿namespace eCommerce.Application.Features.Products.DTOs
 {
     public class ReadProductVariantDto
     {

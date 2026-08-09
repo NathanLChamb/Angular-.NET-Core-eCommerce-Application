@@ -6,5 +6,5 @@ namespace eCommerce.Application.Features.Options.Queries.GetAllOptions
 {
     public record GetAllOptionsQuery(
         PaginationParams pageParams
-        ) : IRequest<PagedResult<ReadOptionDto>>;
+    ) : IRequest<PagedResult<ReadOptionDto>>;
 }

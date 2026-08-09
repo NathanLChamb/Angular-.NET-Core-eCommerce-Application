@@ -22,3 +22,19 @@
     padding: 0px;
     margin: 0px;
 }
+
+.checkout-btn {
+  display: inline-block;
+  padding: 10px 20px;
+  background-color: lightgray;
+  color: Black;
+  text-decoration: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.checkout-btn:hover {
+  background-color: lightskyblue;
+}

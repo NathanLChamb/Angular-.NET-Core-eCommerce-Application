@@ -23,24 +23,24 @@ namespace eCommerce.Application.Features.Orders.Queries.GetAllOrders
 
             switch (request.Filter.Status)
             {
-                case OrderStatusFilter.Working:
+                case OrderSort.Working:
                     ordersQuery = ordersQuery.Where(o =>
                         o.Status == OrderStatus.Pending ||
                         o.Status == OrderStatus.Processing ||
                         o.Status == OrderStatus.Shipped);
                     break;
 
-                case OrderStatusFilter.Completed:
+                case OrderSort.Completed:
                     ordersQuery = ordersQuery.Where(o =>
                         o.Status == OrderStatus.Delivered);
                     break;
 
-                case OrderStatusFilter.Cancelled:
+                case OrderSort.Cancelled:
                     ordersQuery = ordersQuery.Where(o =>
                         o.Status == OrderStatus.Cancelled);
                     break;
 
-                case OrderStatusFilter.All: default:
+                case OrderSort.All: default:
                     break;
             }
 

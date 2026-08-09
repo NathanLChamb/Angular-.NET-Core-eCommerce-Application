@@ -1,6 +1,6 @@
 ﻿namespace eCommerce.Application.Features.Orders.Filters
 {
-    public enum OrderStatusFilter
+    public enum OrderSort
     {
         All,
         Working,

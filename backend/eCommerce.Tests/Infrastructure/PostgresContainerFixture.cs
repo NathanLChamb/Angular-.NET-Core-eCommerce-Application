@@ -1,4 +1,6 @@
 ﻿using eCommerce.Application.Features.Categories.Commands.CreateCategory;
+using eCommerce.Application.Features.Products.Interfaces;
+using eCommerce.Application.Features.Products.Services;
 using eCommerce.Application.Interfaces;
 using eCommerce.Infrastructure.Persistence;
 using MediatR;
@@ -42,6 +44,12 @@ namespace eCommerce.Tests.Infrastructure
 
             services.AddScoped<IeCommerceContext>(sp =>
                 sp.GetRequiredService<eCommerceContext>());
+
+            services.AddScoped<IProductValidationService, ProductValidationService>();
+
+            services.AddLogging();
+
+            services.AddScoped<ITransactionManager, TransactionManager>();
 
             services.AddMediatR(cfg =>
                 cfg.RegisterServicesFromAssembly(typeof(CreateCategoryCommand).Assembly));

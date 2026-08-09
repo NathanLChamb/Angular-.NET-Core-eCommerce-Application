@@ -7,5 +7,5 @@ namespace eCommerce.Application.Features.Options.Commands.UpdateOption
         int Id,
         string Name,
         List<UpdateOptionValueDto> OptionValues
-        ) : IRequest;
+    ) : IRequest;
 }

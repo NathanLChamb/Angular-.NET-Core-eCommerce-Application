@@ -5,5 +5,5 @@ namespace eCommerce.Application.Features.Options.Queries.GetOptionById
 {
     public record GetOptionByIdQuery(
         int Id
-        ) : IRequest<ReadOptionDto>;
+    ) : IRequest<ReadOptionDto>;
 }

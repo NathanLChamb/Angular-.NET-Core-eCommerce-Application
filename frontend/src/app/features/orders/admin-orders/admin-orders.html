@@ -45,7 +45,7 @@
             <div class="order-filters">
   
 </div>
-            @for (order of result.items; track order.id) {                   
+            @for (order of orders.value()?.items ?? []; track order.id) {                   
                     @for (item of order.items; track $index) {
                         <tr>
                             <td>{{order.orderDate | date:'short'}}</td>

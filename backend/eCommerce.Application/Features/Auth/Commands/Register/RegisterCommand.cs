@@ -8,5 +8,4 @@ namespace eCommerce.Application.Features.Auth.Commands.Register
         string Password,
         string DisplayName
     ) : IRequest<AuthResponseDto>;
-
 }

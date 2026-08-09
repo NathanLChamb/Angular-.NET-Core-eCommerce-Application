@@ -5,5 +5,5 @@ namespace eCommerce.Application.Features.Categories.Queries.GetCategoryById
 {
     public record GetCategoryByIdQuery(
         int Id
-        ) : IRequest<ReadCategoryDto>;
+    ) : IRequest<ReadCategoryDto>;
 }

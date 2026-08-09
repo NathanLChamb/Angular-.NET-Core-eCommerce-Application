@@ -96,6 +96,11 @@ namespace eCommerce.Application.Features.Orders.Commands.CreateOrder
                     }).ToList()
                 };
             }
+            catch (DbUpdateConcurrencyException)
+            {
+                await _transaction.RollbackTransactionAsync(ct);
+                throw new ConflictException("The stock changed while processing your order. Please try again.");
+            }
             catch
             {
                 await _transaction.RollbackTransactionAsync(ct);

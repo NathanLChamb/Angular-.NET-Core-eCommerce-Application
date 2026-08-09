@@ -6,5 +6,5 @@ namespace eCommerce.Application.Features.Categories.Commands.UpdateCategory
         int Id,
         string Name,
         string Description
-        ) : IRequest;
+    ) : IRequest;
 }

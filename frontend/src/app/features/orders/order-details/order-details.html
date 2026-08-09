@@ -7,76 +7,32 @@
 }
 
 @if (order.value(); as currentOrder) {
-
     <section class="order-details">
-
-        <h1>
-            Order {{ currentOrder.orderNumber }}
-        </h1>
-
+        <h1>Order {{ currentOrder.orderNumber }}</h1>
 
         <div class="order-summary">
+            <p>Date: {{ currentOrder.orderDate | date:'medium' }}</p>
+            <p>Status: {{ currentOrder.status }}</p>
+            <p>Shipping Address: {{ currentOrder.shippingAddress }}</p>
 
-            <p>
-                Date:
-                {{ currentOrder.orderDate | date:'medium' }}
-            </p>
-
-            <p>
-                Status:
-                {{ currentOrder.status }}
-            </p>
-
-            <p>
-                Shipping Address:
-                {{ currentOrder.shippingAddress }}
-            </p>
-
-            <h2>
-                Total:
-                ${{ currentOrder.totalPrice.toFixed(2) }}
-            </h2>
-
+            <h2>Total: ${{ currentOrder.totalPrice.toFixed(2) }}</h2>
         </div>
 
-
         <h2>Items</h2>
-
         <ul class="order-items">
-
             @for (item of currentOrder.items; track item.id) {
-
                 <li class="order-item">
-
-                    <h3>
-                        {{ item.productName }}
-                    </h3>
-
-                    <p>
-                        SKU:
-                        {{ item.sku }}
-                    </p>
-
-                    <p>
-                        Quantity:
-                        {{ item.quantity }}
-                    </p>
-
-                    <p>
-                        Price:
-                        ${{ item.priceAtPurchase.toFixed(2) }}
-                    </p>
-
-                    <p>
-                        Total:
-                        ${{ item.totalPrice.toFixed(2) }}
-                    </p>
+                    <h3>{{ item.productName }}</h3>
+                    <p>SKU: {{ item.sku }}</p>
+                    <p>Quantity: {{ item.quantity }}</p>
+                    <p>Price: ${{ item.priceAtPurchase.toFixed(2) }}</p>
+                    <p>Total: ${{ item.totalPrice.toFixed(2) }}</p>
                 </li>
             }
         </ul>
+
         @if (currentOrder.status === 'Pending' || currentOrder.status === 'Processing') {
             <button (click)="cancelOrder(currentOrder.id)">Cancel Order</button>
         }
     </section>
-
 }

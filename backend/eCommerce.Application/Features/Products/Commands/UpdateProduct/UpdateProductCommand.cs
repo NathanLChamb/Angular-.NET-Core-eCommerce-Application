@@ -10,5 +10,5 @@ namespace eCommerce.Application.Features.Products.Commands.UpdateProduct
         List<int> CategoryIds,
         List<int> OptionIds,
         List<UpdateProductVariantDto> ProductVariants
-        ) : IRequest;
+    ) : IRequest;
 }
