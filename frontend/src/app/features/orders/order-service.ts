@@ -20,6 +20,10 @@ export class OrderService {
     return this.http.get<ReadOrderDto>(`${this.apiUrl}/${id}`);
   }
 
+  getAdminOrderById(id: number) {
+    return this.http.get<ReadOrderFromAdminDto>(`${this.apiUrl}/admin/${id}`);
+  }
+
   createOrder(dto: CreateOrderDto): Observable<ReadOrderDto> {
     return this.http.post<ReadOrderDto>(this.apiUrl, dto);
   }

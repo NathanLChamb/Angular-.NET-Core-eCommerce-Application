@@ -4,6 +4,7 @@ using eCommerce.Application.Features.Orders.Commands.CancelOrder;
 using eCommerce.Application.Features.Orders.Commands.CreateOrder;
 using eCommerce.Application.Features.Orders.Commands.UpdateOrderStatus;
 using eCommerce.Application.Features.Orders.Filters;
+using eCommerce.Application.Features.Orders.Queries.GetAdminOrderById;
 using eCommerce.Application.Features.Orders.Queries.GetAllOrders;
 using eCommerce.Application.Features.Orders.Queries.GetMyOrders;
 using eCommerce.Application.Features.Orders.Queries.GetOrderById;
@@ -71,5 +72,13 @@ public class OrdersController : ControllerBase
         var result = await _mediator.Send(new UpdateOrderStatusCommand(id, request.Status), ct);
         return Ok(result);
     }
-    
+
+    [Authorize(Roles = Roles.Admin)]
+    [HttpGet("admin/{id:int}")]
+    public async Task<ActionResult<ReadOrderFromAdminDto>> GetAdminOrderById(int id, CancellationToken ct)
+    {
+        var result = await _mediator.Send(new GetAdminOrderByIdQuery(id), ct);
+        return Ok(result);
+    }
+
 }

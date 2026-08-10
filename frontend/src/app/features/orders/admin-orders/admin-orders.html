@@ -49,7 +49,7 @@
                     @for (item of order.items; track $index) {
                         <tr>
                             <td>{{order.orderDate | date:'short'}}</td>
-                            <td [routerLink]="['/orders', order.id]">{{order.orderNumber}}</td>
+                            <td><a class="order-link" [routerLink]="['/orders/admin', order.id]">{{order.orderNumber}}</a></td>
                             <td>{{item.sku}}</td>
                             <td>{{item.quantity}}</td>
                             <td>
