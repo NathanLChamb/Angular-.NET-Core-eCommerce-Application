@@ -1,0 +1,11 @@
+<nav>
+    <ul>
+        @if(authService.isAdmin()) {
+            <li><a routerLink="/category" (click)="resetSearch()">CATEGORIES</a></li>
+            <li><a routerLink="/option" (click)="resetSearch()">OPTIONS</a></li>
+            <li><a routerLink="/product" (click)="resetSearch()">PRODUCTS</a></li>
+            <li><a routerLink="/orders/admin" (click)="resetSearch()">MANAGE ORDERS</a></li>
+            <li><p>REPORTS (doesn't do anything right now)</p></li>
+        }
+    </ul>
+</nav>

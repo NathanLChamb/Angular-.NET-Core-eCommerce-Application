@@ -1,34 +1,36 @@
-<section class="nav-bar">
-    <nav class="main-nav">
-        <ul class="nav-links">
-            <li><a routerLink="/" (click)="resetSearch()">HOME</a></li>
-            <li>
-                <input type="text" placeholder="Search..." [value]="filterService.filter().search"
-                    (input)="filterService.updateSearch($any($event.target).value)" />
-            </li>
-           @if(authService.isAdmin()) {
-                <li><a routerLink="/category" (click)="resetSearch()">CATEGORIES</a></li>
-                <li><a routerLink="/option" (click)="resetSearch()">OPTIONS</a></li>
-                <li><a routerLink="/product" (click)="resetSearch()">PRODUCTS</a></li>
-                <li><a routerLink="/orders/admin" (click)="resetSearch()">MANAGE ORDERS</a></li>
-                <li class="welcome">
-                    Welcome, {{ authService.user()?.displayName }}
-                </li>
-                <li><button type="button" (click)="logout(); resetSearch()">LOGOUT</button></li>
-                <li><a routerLink="/cart" (click)="resetSearch()">CART</a></li>
-                <li><a routerLink="/orders" (click)="resetSearch()">ORDERS</a></li>
-            }
-            @else if (authService.isAuthenticated()) {
-                <li class="welcome">
-                    Welcome, {{ authService.user()?.displayName }}
-                </li>
-                <li><button type="button" (click)="logout(); resetSearch()">LOGOUT</button></li>
-                <li><a routerLink="/cart" (click)="resetSearch()">CART</a></li>
-                <li><a routerLink="/orders" (click)="resetSearch()">ORDERS</a></li>
-            } @else {
-                <li><a routerLink="/login">LOGIN</a></li>
-                <li><a routerLink="/register">REGISTER</a></li>
-            }
-        </ul>
-    </nav>
-</section>
+<nav>
+    <ul>
+        <li><a routerLink="/" (click)="resetSearch()">My Store</a></li>
+        <li class="search">
+            <input type="test-search" placeholder="Search..."
+                [value]="filterService.filter().search"
+                (input)="filterService.updateSearch($any($event.target).value)"/></li>
+        @if (authService.isAuthenticated()) {
+            <li><button type="button">
+                <p>Hello, {{ authService.user()?.displayName }}</p>
+                <p>Account & Lists</p></button>
+                <ul class="submenu">
+                    <li id="s1">
+                        <h4>Recently Viewed</h4>
+                        <ul>
+                            <li>test</li>
+                            <li>test</li>
+                            <li>test</li>
+                            <li>test</li>
+                        </ul>
+                    <li id="s2">
+                        <button type="button" (click)="logout(); resetSearch()">Sign Out</button></li>
+                    <li id="s3">
+                        <a routerLink="/" (click)="resetSearch()">Your Lists</a></li>
+                    <li id="s4">
+                        <a routerLink="/" (click)="resetSearch()">Your Account</a></li></ul></li>
+            <li><a routerLink="/orders" (click)="resetSearch()">
+                <p>Returns</p>
+                <p>& Orders</p></a></li>
+            <li><a routerLink="/cart" (click)="resetSearch()">Cart</a></li>
+        } @else {
+        <li><a routerLink="/login">Login</a></li>
+        <li><a routerLink="/register">Register</a></li>
+        }
+    </ul>
+</nav>

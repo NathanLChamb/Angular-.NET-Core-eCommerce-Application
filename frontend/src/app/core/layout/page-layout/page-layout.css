@@ -1,0 +1,17 @@
+body {
+    display: flex;
+
+}
+
+main {
+    flex-basis: 100%;
+}
+
+aside {
+    flex-basis: 10%;
+}
+
+footer {
+    margin-top: .5em;
+    padding-top: .5em;
+}

@@ -1,0 +1,19 @@
+ul {
+    display: flex;
+    flex-direction: column;
+    list-style-type: none;
+}
+
+li {
+    padding: .25em 1em;  
+}
+
+a {
+    display: inline-block;
+    text-decoration: none;
+    color: white;
+
+    &:hover, &:focus {
+        text-decoration: underline;
+    }
+}
