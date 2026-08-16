@@ -11,7 +11,7 @@ li {
 a {
     display: inline-block;
     text-decoration: none;
-    color: white;
+    color: currentColor;
 
     &:hover, &:focus {
         text-decoration: underline;

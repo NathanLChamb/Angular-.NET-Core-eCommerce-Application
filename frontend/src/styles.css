@@ -4,13 +4,35 @@
     padding: 0px;
 }
 
+:root {
+  --background: #f4f5f7;
+  --surface: #ffffff;
+
+  --navbar: #0b1628;
+  --secondary-nav: #243B5A;
+  --dark-surface: #16243a;
+
+  --text: #172033;
+  --text-light: #f8fafc;
+  --text-muted: #667085;
+
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+
+  --border: #e2e5ea;
+  --surface-hover: #f0f2f5;
+
+  --success: #16a34a;
+  --danger: #dc2626;
+}
+
 html {
     height: 100%;
 }
 
 body {
-    margin: 0;
     height: 100%;
-    background-color: #111827;
-    color: #EAEAEA;
+    background-color: var(--background);
+    color: var(--text);
 }
+

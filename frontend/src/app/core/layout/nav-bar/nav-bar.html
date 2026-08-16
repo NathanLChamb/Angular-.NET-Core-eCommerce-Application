@@ -1,36 +1,55 @@
-<nav>
+<nav class="primary">
     <ul>
-        <li><a routerLink="/" (click)="resetSearch()">My Store</a></li>
+        <li class="logo"><a routerLink="/" (click)="resetSearch()">My Store</a></li>
         <li class="search">
             <input type="test-search" placeholder="Search..."
                 [value]="filterService.filter().search"
                 (input)="filterService.updateSearch($any($event.target).value)"/></li>
         @if (authService.isAuthenticated()) {
-            <li><button type="button">
-                <p>Hello, {{ authService.user()?.displayName }}</p>
-                <p>Account & Lists</p></button>
-                <ul class="submenu">
-                    <li id="s1">
-                        <h4>Recently Viewed</h4>
-                        <ul>
-                            <li>test</li>
-                            <li>test</li>
-                            <li>test</li>
-                            <li>test</li>
-                        </ul>
-                    <li id="s2">
-                        <button type="button" (click)="logout(); resetSearch()">Sign Out</button></li>
-                    <li id="s3">
-                        <a routerLink="/" (click)="resetSearch()">Your Lists</a></li>
-                    <li id="s4">
-                        <a routerLink="/" (click)="resetSearch()">Your Account</a></li></ul></li>
-            <li><a routerLink="/orders" (click)="resetSearch()">
+            <li class="account">
+                <input type="checkbox" id="checkbox-toggle" />
+                <label for="checkbox-toggle" class="submenu-btn mobile">
+                    <span>{{ authService.user()?.displayName }}</span></label>
+                <button type="button" class="desktop">
+                <a routerLink="/">
+                    <p>Hello, {{ authService.user()?.displayName }}</p>
+                    <p>Account & Lists</p></a></button>
+                        <ul class="submenu">
+                            <li id="s1" class="desktop">
+                                <h4>Recently Viewed</h4>
+                                <ul>
+                                    <li>test</li>
+                                    <li>test</li>
+                                    <li>test</li>
+                                    <li>test</li></ul></li>
+                            <li id="s2">
+                                <button type="button">Switch Views</button>
+                                <button type="button">Switch Accounts</button>
+                                <button type="button" (click)="logout(); resetSearch()">Sign Out</button></li>
+                            <li id="s3">
+                                <a routerLink="/" (click)="resetSearch()">Your Lists</a></li>
+                            <li id="s4">
+                                <a routerLink="/" (click)="resetSearch()">Your Account</a></li></ul></li>
+            <li class="desktop orders"><a routerLink="/orders" (click)="resetSearch()">
                 <p>Returns</p>
                 <p>& Orders</p></a></li>
-            <li><a routerLink="/cart" (click)="resetSearch()">Cart</a></li>
+            <li class="cart"><a routerLink="/cart" (click)="resetSearch()">Cart</a></li>
         } @else {
         <li><a routerLink="/login">Login</a></li>
         <li><a routerLink="/register">Register</a></li>
         }
+    </ul>
+</nav>
+<nav class="secondary">
+    <ul>
+        @if(authService.isAdmin()) {
+            <li><a routerLink="/category" (click)="resetSearch()">CATEGORIES</a></li>
+            <li><a routerLink="/option" (click)="resetSearch()">OPTIONS</a></li>
+            <li><a routerLink="/product" (click)="resetSearch()">PRODUCTS</a></li>
+            <li><a routerLink="/orders/admin" (click)="resetSearch()">MANAGE ORDERS</a></li>
+            <li><p>REPORTS</p></li>
+        }
+        <li><a routerLink="/product">Apparel</a></li>
+        <li><a routerLink="/product">Electronics</a></li> 
     </ul>
 </nav>

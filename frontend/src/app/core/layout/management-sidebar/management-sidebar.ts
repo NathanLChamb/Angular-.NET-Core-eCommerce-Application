@@ -5,7 +5,7 @@ import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-management-sidebar',
-  imports: [RouterLink],
+  imports: [],
   templateUrl: './management-sidebar.html',
   styleUrl: './management-sidebar.css',
 })
