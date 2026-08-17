@@ -13,14 +13,13 @@
 }
 
 .secondary {
-    background-color: var(--secondary-nav);
+    background-color: var(--dark-blue);
     overflow-x: auto;
     overflow-y: hidden;
 
     &> ul {
         &>li > a {
             padding: .5em .5em;
-        
         }
     }
 
@@ -37,7 +36,7 @@
 }
 
 nav {
-    background-color: var(--navbar);
+    background-color: var(--darker-blue);
     color: var(--text-light);
 
     &> ul {
@@ -99,8 +98,6 @@ ul {
     }
 }
 
-
-
 button {
     background-color: transparent;
     color: var(--nav-text);
@@ -120,7 +117,6 @@ button {
     &::after {
         content: "\25bc";
         font-size: small;
-        /* content: "\2630"; */
     }
 }
 

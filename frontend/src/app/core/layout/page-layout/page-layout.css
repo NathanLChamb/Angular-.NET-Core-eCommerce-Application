@@ -1,6 +1,5 @@
-body {
+.page-body {
     display: flex;
-
 }
 
 main {
@@ -8,10 +7,13 @@ main {
 }
 
 aside {
-    flex-basis: 10%;
+    flex-basis: 0;
 }
 
 footer {
-    margin-top: .5em;
-    padding-top: .5em;
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    margin: .25em;
+    padding: .25em;
 }

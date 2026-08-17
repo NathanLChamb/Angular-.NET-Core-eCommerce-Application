@@ -2,7 +2,7 @@
     <ul>
         <li class="logo"><a routerLink="/" (click)="resetSearch()">My Store</a></li>
         <li class="search">
-            <input type="test-search" placeholder="Search..."
+            <input type="search" placeholder="Search..."
                 [value]="filterService.filter().search"
                 (input)="filterService.updateSearch($any($event.target).value)"/></li>
         @if (authService.isAuthenticated()) {

@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { OrderService } from '../order-service';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
@@ -13,6 +13,8 @@ import { DatePipe } from '@angular/common';
 })
 export class AdminOrders {
   private orderService = inject(OrderService);
+  protected pageNumber = signal(1)
+  protected pageSize = signal(5)
   protected readonly OrderStatusFilter = OrderStatusFilter;
   protected filter = signal<OrderSearchFilter>({
     status: OrderStatusFilter.All,
@@ -46,6 +48,13 @@ export class AdminOrders {
       this.orders.reload();
     });
   }
+
+  protected totalPages = computed(() => {
+    const data = this.orders.value()
+    if (!data) return 0
+
+    return Math.ceil(data.totalCount / this.pageSize())
+  })
 
   protected previousPage() {
     this.filter.update(f => ({

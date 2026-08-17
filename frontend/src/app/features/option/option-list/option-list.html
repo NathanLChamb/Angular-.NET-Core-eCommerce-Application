@@ -1,40 +1,43 @@
-<button type="button" [routerLink]="['create']">
-    Create Option
-</button>
-
-@if (options.error()) {
-    <p>Options retrieval error</p>
-}
-
-<table>
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Values</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        @if (options.isLoading()) {
-            <p>Loading...</p>
-        }
-        @if (options.value(); as result) {
-            @for (option of result.items; track option.id) {
+<figure>
+    <figcaption>Manage Options</figcaption>
+    <table>
+        <caption>
+            <div>
+                <input type="search" placeholder="Search..." />
+                <button type="button" [routerLink]="['create']">Create Option</button></div></caption>
+        <thead>
+            <tr>
+                <th id="hdr_id" scope="col">ID</th>
+                <th id="hdr_name" scope="col">Name</th>
+                <th id="hdr_values" scope="col">Values</th>
+                <th id="hdr_actions" scope="col">Actions</th></tr></thead>
+        <tbody>
+            @if (options.error()) {
                 <tr>
-                    <td>{{option.id}}</td>
-                    <td>{{option.name}}</td>
-                    <td>
-                    @for (optionValue of option.optionValues;  track optionValue.id) {
-                        {{optionValue.value}}{{!$last ? ", " : "" }}
-                    }
-                    </td>
-                    <td>
-                        <button type="button" [routerLink]="['edit', option.id]">Edit</button>
-                        <button (click)="handleDelete(option.id)">Delete</button>
-                    </td>
-                </tr>
+                    <td colspan="4">Options retrieval error</td></tr>
             }
-        }
-    </tbody>
-</table>
+            @if (options.isLoading()) {
+                <tr>
+                    <td colspan="4">Loading...</td></tr>
+            }
+            @if (options.value(); as result) {
+                @for (option of result.items; track option.id) {
+                    <tr>
+                        <td headers="hdr_id">{{option.id}}</td>
+                        <td headers="hdr_name">{{option.name}}</td>
+                        <td headers="hdr_values">
+                            @for (optionValue of option.optionValues;  track optionValue.id) {
+                                {{optionValue.value}}{{!$last ? ", " : "" }}
+                            }</td>
+                        <td headers="hdr_actions">
+                            <button type="button" [routerLink]="['edit', option.id]">Edit</button>
+                            <button (click)="handleDelete(option.id)">Delete</button></td></tr>
+                }
+            }</tbody>
+    </table>
+    <div class="buttons">
+        <button (click)="previousPage()" [disabled]="pageNumber() === 1">Previous</button>
+        <span>Page {{pageNumber()}} of {{totalPages()}}</span>
+        <button (click)="nextPage()" [disabled]="pageNumber() === totalPages()">Next</button>
+    </div>
+</figure>

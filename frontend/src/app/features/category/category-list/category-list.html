@@ -1,40 +1,46 @@
-<button type="button" [routerLink]="['create']">
-    Create Category
-</button>
-
-@if (categories.error()) {
-    <p>Categories retrieval error</p>
-}
-
-<table>
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Description</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        @if (categories.isLoading()) {
-            <p>Loading...</p>
-        }
-        @if (categories.value(); as result) {
-            @for (category of result.items; track category.id) {
+<figure>
+    <figcaption>Manage Categories</figcaption>
+    <table>
+        <caption>
+            <div>
+                <input type="search" placeholder="Search..." />
+                <button type="button" [routerLink]="['create']">Create Category</button></div>
+        </caption>
+        <thead>
+            <tr>
+                <th id="hdr_id" scope="col">ID</th>
+                <th id="hdr_name" scope="col">Name</th>
+                <th id="hdr_desc" scope="col">Description</th>
+                <th id="hdr_actions" scope="col">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (categories.error()) {
                 <tr>
-                    <td>{{category.id}}</td>
-                    <td>{{category.name}}</td>
-                    <td>{{category.description}}</td>
-                    <td>
-                        <button type="button" [routerLink]="['edit', category.id]">Edit</button>
-                        <button type="button" (click)="handleDelete(category.id)">Delete</button>
-                    </td>
-                </tr>
+                    <td colspan="4">Categories retrieval error</td></tr>
             }
-        }
-    </tbody>
-</table>
-
-<button (click)="previousPage()" [disabled]="pageNumber() === 1">Previous</button>
-<span>Page {{pageNumber()}} of {{totalPages()}}</span>
-<button (click)="nextPage()" [disabled]="pageNumber() === totalPages()">Next</button>
+            @if (categories.isLoading()) {
+                <tr>
+                    <td colspan="4">Loading...</td></tr>
+            }
+            @if (categories.value(); as result) {
+                @for (category of result.items; track category.id) {
+                    <tr>
+                        <td headers="hdr_id">{{category.id}}</td>
+                        <td headers="hdr_name">{{category.name}}</td>
+                        <td headers="hdr_desc">{{category.description}}</td>
+                        <td headers="hdr_actions">
+                            <button type="button" [routerLink]="['edit', category.id]">Edit</button>
+                            <button type="button" (click)="handleDelete(category.id)">Delete</button>
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+    <div class="buttons">
+        <button (click)="previousPage()" [disabled]="pageNumber() === 1">Previous</button>
+        <span>Page {{pageNumber()}} of {{totalPages()}}</span>
+        <button (click)="nextPage()" [disabled]="pageNumber() === totalPages()">Next</button>
+    </div>
+</figure>
