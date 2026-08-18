@@ -69,7 +69,7 @@ th {
 @media screen and (max-width: 768px) {
     figure {
         width: auto;
-        min-height: 80vh;
+        min-height: 75vh;
         margin: 0%;
     }
 
@@ -82,7 +82,7 @@ th {
     }
 
     .main-table {
-        width: 80%;
+        width: 90%;
         margin-inline: auto;
 
         &> thead {

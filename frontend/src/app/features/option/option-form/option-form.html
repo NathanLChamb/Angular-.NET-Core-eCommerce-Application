@@ -1,6 +1,7 @@
-<h2>{{isEditMode() ? "Edit Option" : "Create Option"}}</h2>
+
 
 <form [formGroup]="form" (ngSubmit)="onSubmit()">
+    <h2>{{isEditMode() ? "Edit Option" : "Create Option"}}</h2>
     <div>
         <label for="name">Name</label>
         <input id="name" formControlName="name" />
@@ -36,6 +37,8 @@
         }
     </div>
 
-    <button type="button" (click)="addOptionValue()">Add</button>
-    <button type="submit" [disabled]="form.invalid || option.isLoading()">Submit</button>
+    <div class="btn">
+        <button type="button" (click)="addOptionValue()">Add</button>
+        <button type="submit" [disabled]="form.invalid || option.isLoading()">Submit</button></div>
+    
 </form>
