@@ -56,3 +56,52 @@ th {
     display: flex;
     justify-content: center;
 }
+
+@media screen and (max-width: 768px) {
+    figure {
+        width: auto;
+        min-height: 80vh;
+        margin: 0%;
+    }
+
+    table {
+        width: 80%;
+        margin-inline: auto;
+    }
+    thead, figcaption {
+        display: none;
+    }
+
+    tbody tr {
+        display: grid;
+        grid-template-columns: 20% 80%;
+    }
+
+    th, td {
+        display: block;
+    }
+
+    td:first-child {
+        grid-row: 1 / span 3;
+        grid-column: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: var(--light-blue);
+        color: var(--text-light);
+    }
+
+    td:nth-child(2) {
+        background-color: var(--dark-blue);
+        color: var(--text-light);
+    }
+
+    td:nth-child(2), td:nth-child(3), td:nth-child(4) {
+        grid-column: 2;
+        text-align: left;   
+    }
+
+    td:nth-child(4) {
+        text-align: right;
+    }
+}

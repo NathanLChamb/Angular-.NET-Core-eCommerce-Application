@@ -12,6 +12,10 @@ figure {
     }
 }
 
+.expanded-row > td {
+    padding: 0;
+}
+
 table {
     border-collapse: collapse;
     border: 1px solid black;
@@ -39,7 +43,7 @@ table {
 
 .sub-table table {
     width: fit-content;
-    margin-inline: auto;
+    margin-inline: left;
 }
 
 th, td {
@@ -60,4 +64,79 @@ th {
     margin-top: 1em;
     display: flex;
     justify-content: center;
+}
+
+@media screen and (max-width: 768px) {
+    figure {
+        width: auto;
+        min-height: 80vh;
+        margin: 0%;
+    }
+
+    figcaption {
+        display: none;
+    }
+
+    .sub-table {
+        width: 100%;     
+    }
+
+    .main-table {
+        width: 80%;
+        margin-inline: auto;
+
+        &> thead {
+            display: none;
+        }
+
+        & > tbody > tr:not(.expanded-row) {
+            display: grid;
+            grid-template-columns: 5% 15% 80%;
+        }
+
+        &> tbody {
+            &> tr:not(.expanded-row) > td {
+                &[data-label]::before {
+                    content: attr(data-label) ":";
+                    margin-right: 0.5em;
+                }
+
+                &:first-child {
+                    grid-row: 1 / span 8;
+                    grid-column: 1;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    background-color: var(--light-blue);
+                    color: var(--text-light);
+                }
+
+                &:nth-child(2) {
+                    grid-row: 1 / span 8;
+                    grid-column: 2;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    background-color: var(--light-blue);
+                    color: var(--text-light);
+                }
+
+                &:nth-child(3) {
+                    background-color: var(--dark-blue);
+                    color: var(--text-light);
+                }
+
+                &:nth-child(3), & td:nth-child(4), & td:nth-child(5) {
+                    grid-column: 3;
+                    text-align: left;   
+                }
+
+                &:nth-child(8) {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                }
+            }
+        }    
+    }
 }
