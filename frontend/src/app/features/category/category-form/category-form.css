@@ -32,17 +32,9 @@ small {
 
 button {
     padding: .1em .25em;
-}
-
-.btn {
     display: block;
     margin-block: .5em .25em;
     margin-inline: auto;
-    text-align: center;
-
-    &> button {
-        margin-inline: 1em;
-    }
 }
 
 @media screen and (max-width: 768px) {

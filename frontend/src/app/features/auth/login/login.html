@@ -1,6 +1,6 @@
-<div class="login-container">
-  <h1>Login</h1>
+<div class="login-page">
   <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+    <h2>Login</h2>
     <div>
       <label>Email</label>
       <input type="email" formControlName="email"></div>
@@ -17,9 +17,13 @@
   </form>
 </div>
 
-<h3>Demo Access</h3>
-<p>Use the demo accounts below:</p>
-<p>- Customer account — view storefront features</p>
-<p>- Admin account — manage products and options</p>
-<br>
-<p>Credentials are available in the project README.</p>
+<div class="demo-access">
+    <div class="demo-text">
+        <h3>Demo Access</h3>
+        <p>Use the demo accounts below:</p>
+        <p>- Customer account — view storefront features</p>
+        <p>- Admin account — manage products and options</p>
+        <p>Credentials are available in the project README.</p>
+    </div>
+</div>
+

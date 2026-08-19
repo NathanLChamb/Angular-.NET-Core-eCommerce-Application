@@ -51,10 +51,6 @@ th {
     color: var(--text-light);
 }
 
-button {
-    padding: .1em .25em;
-}
-
 .buttons {
     margin-top: 1em;
     display: flex;

@@ -1,57 +1,22 @@
-<div class="register-container">
-
-  <h1>Create Account</h1>
-
-  <form
-    [formGroup]="registerForm"
-    (ngSubmit)="onSubmit()">
-
-    <div>
-      <label>Display Name</label>
-      <input
-        type="text"
-        formControlName="displayName">
-    </div>
-
-    <div>
-      <label>Email</label>
-      <input
-        type="email"
-        formControlName="email">
-    </div>
-
-    <div>
-      <label>Password</label>
-      <input
-        type="password"
-        formControlName="password">
-    </div>
-
-    <div>
-        <label>Confirm Password</label>
-        <input
-            type="password"
-            formControlName="confirmPassword">
-
-            @if (registerForm.hasError('passwordMismatch')
-                && registerForm.get('confirmPassword')?.touched) {
-
-            <p class="text-danger">
-                Passwords do not match.
-            </p>
-
-            }
-    </div>
-    @if (errorMessage) {
-      <p>{{ errorMessage }}</p>
-    }
-
-    <button
-      type="submit"
-      [disabled]="registerForm.invalid">
-      Register
-    </button>
-
-  </form>
-
-</div>
+<form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+  <h2>Create Account</h2>
+  <div>
+    <label>Display Name</label>
+    <input type="text" formControlName="displayName"></div>
+  <div>
+    <label>Email</label>
+    <input type="email" formControlName="email"></div>
+  <div>
+    <label>Password</label>
+    <input type="password" formControlName="password"></div>
+  <div>
+      <label>Confirm Password</label>
+      <input type="password" formControlName="confirmPassword">
+          @if (registerForm.hasError('passwordMismatch') && registerForm.get('confirmPassword')?.touched) {
+            <small>Passwords do not match. </small>
+          }</div>
+  @if (errorMessage) {
+    <p>{{ errorMessage }}</p>
+  }
+  <button type="submit" [disabled]="registerForm.invalid">Register</button>
+</form>
