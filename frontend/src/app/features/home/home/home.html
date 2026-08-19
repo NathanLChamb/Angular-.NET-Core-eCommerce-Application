@@ -6,10 +6,7 @@
         @for(product of result.items; track product.id) {
             <article class="product-card" [routerLink]="['/product', product.id]">
                 @if (product.productOptionValueImages.find(i => i.isDefault); as image) {
-                    <img
-                        [src]="image.url"
-                        [alt]="product.name"
-                    />
+                    <img [src]="image.url" [alt]="product.name" />
                 } @else {
                     <div class="image-placeholder">
                         No image available

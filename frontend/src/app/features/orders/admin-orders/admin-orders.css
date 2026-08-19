@@ -3,11 +3,13 @@
     display: inline-block;
     color: lightblue;
 
-}figure {
+}
+
+figure {
     width: fit-content;
     background-color: var(--dark-background);
     padding: 1em 2em;
-    margin-left: 25%;
+    margin-inline: auto;
     margin-top: 2%;
 
     & figcaption {
