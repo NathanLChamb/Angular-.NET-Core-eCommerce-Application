@@ -1,7 +1,7 @@
 ﻿using eCommerce.Application.Exceptions;
 using eCommerce.Application.Features.Products.Images.DTOs;
 using eCommerce.Application.Interfaces;
-using eCommerce.Domain.Product;
+using eCommerce.Domain.Catalog.Products;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -25,8 +25,11 @@ namespace eCommerce.Application.Features.Products.Images.Commands.AddProductOpti
                 .Distinct()
                 .ToList();
 
-            var validOptionValueIds = await _context.OptionValues
-                .Where(ov => optionValueIds.Contains(ov.Id) && _context.ProductOptions.Any(po =>po.ProductId == request.ProductId && po.OptionId == ov.OptionId))
+            var validOptionValueIds = await _context.Products
+                .Where(p => p.Id == request.ProductId)
+                    .SelectMany(p => p.Options)
+                    .SelectMany(o => o.Values)
+                .Where(ov => optionValueIds.Contains(ov.Id))
                 .Select(ov => ov.Id)
                 .ToListAsync(ct);
 

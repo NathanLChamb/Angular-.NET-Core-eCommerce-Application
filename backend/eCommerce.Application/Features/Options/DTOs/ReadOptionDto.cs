@@ -1,9 +1,0 @@
-﻿namespace eCommerce.Application.Features.Options.DTOs
-{
-    public class ReadOptionDto
-    {
-        public int Id { get; set; }
-        public required string Name { get; set; }
-        public List<ReadOptionValueDto> OptionValues { get; set; } = new();
-    }
-}

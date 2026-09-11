@@ -154,6 +154,51 @@ namespace eCommerce.Infrastructure.Persistence.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("ProductCategories", b =>
+                {
+                    b.Property<int>("ProductId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("CategoryId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("ProductId", "CategoryId");
+
+                    b.HasIndex("CategoryId");
+
+                    b.ToTable("ProductCategories");
+                });
+
+            modelBuilder.Entity("ProductOptions", b =>
+                {
+                    b.Property<int>("ProductId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("OptionId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("ProductId", "OptionId");
+
+                    b.HasIndex("OptionId");
+
+                    b.ToTable("ProductOptions");
+                });
+
+            modelBuilder.Entity("ProductVariantOptionValues", b =>
+                {
+                    b.Property<int>("ProductVariantId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("OptionValueId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("ProductVariantId", "OptionValueId");
+
+                    b.HasIndex("OptionValueId");
+
+                    b.ToTable("ProductVariantOptionValues");
+                });
+
             modelBuilder.Entity("eCommerce.Domain.Cart.Cart", b =>
                 {
                     b.Property<int>("Id")
@@ -208,6 +253,213 @@ namespace eCommerce.Infrastructure.Persistence.Migrations
                     b.ToTable("CartItems");
                 });
 
+            modelBuilder.Entity("eCommerce.Domain.Catalog.Categories.Category", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("Categories");
+                });
+
+            modelBuilder.Entity("eCommerce.Domain.Catalog.Options.Option", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("Options");
+                });
+
+            modelBuilder.Entity("eCommerce.Domain.Catalog.Options.OptionValue", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("OptionId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OptionId");
+
+                    b.ToTable("OptionValues");
+                });
+
+            modelBuilder.Entity("eCommerce.Domain.Catalog.ProductVariants.ProductVariant", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Sku")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("Sku");
+
+                    b.Property<int>("StockQuantity")
+                        .HasColumnType("integer")
+                        .HasColumnName("StockQuantity");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Sku")
+                        .IsUnique();
+
+                    b.HasIndex("ProductId", "Sku")
+                        .IsUnique();
+
+                    b.ToTable("ProductVariants");
+                });
+
+            modelBuilder.Entity("eCommerce.Domain.Catalog.Products.Product", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Products");
+                });
+
+            modelBuilder.Entity("eCommerce.Domain.Catalog.Products.ProductCatalogAttribute", b =>
+                {
+                    b.Property<int>("ProductId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("CatalogAttributeId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("ProductId", "CatalogAttributeId");
+
+                    b.HasIndex("CatalogAttributeId");
+
+                    b.ToTable("ProductCatalogAttributes");
+                });
+
+            modelBuilder.Entity("eCommerce.Domain.Catalog.Products.ProductImage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.ToTable("ProductImages");
+                });
+
+            modelBuilder.Entity("eCommerce.Domain.Catalog.Products.ProductOptionValueImage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.ToTable("ProductOptionValueImages");
+                });
+
+            modelBuilder.Entity("eCommerce.Domain.Catalog.Products.ProductOptionValueImageOptionValue", b =>
+                {
+                    b.Property<int>("ProductOptionValueImageId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("OptionValueId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("ProductOptionValueImageId", "OptionValueId");
+
+                    b.HasIndex("OptionValueId");
+
+                    b.ToTable("ProductOptionValueImageOptionValues");
+                });
+
             modelBuilder.Entity("eCommerce.Domain.Metadata.CatalogAttribute", b =>
                 {
                     b.Property<int>("Id")
@@ -229,76 +481,6 @@ namespace eCommerce.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("CatalogAttributes");
-                });
-
-            modelBuilder.Entity("eCommerce.Domain.Metadata.Category", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasMaxLength(300)
-                        .HasColumnType("character varying(300)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Name")
-                        .IsUnique();
-
-                    b.ToTable("Categories");
-                });
-
-            modelBuilder.Entity("eCommerce.Domain.Metadata.Option", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Name")
-                        .IsUnique();
-
-                    b.ToTable("Options");
-                });
-
-            modelBuilder.Entity("eCommerce.Domain.Metadata.OptionValue", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("OptionId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Value")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("OptionId");
-
-                    b.ToTable("OptionValues");
                 });
 
             modelBuilder.Entity("eCommerce.Domain.Order.Order", b =>
@@ -384,216 +566,6 @@ namespace eCommerce.Infrastructure.Persistence.Migrations
                     b.HasIndex("ProductVariantId");
 
                     b.ToTable("OrderItems");
-                });
-
-            modelBuilder.Entity("eCommerce.Domain.Product.Product", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasMaxLength(300)
-                        .HasColumnType("character varying(300)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Name");
-
-                    b.ToTable("Products");
-                });
-
-            modelBuilder.Entity("eCommerce.Domain.Product.ProductCatalogAttribute", b =>
-                {
-                    b.Property<int>("ProductId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("CatalogAttributeId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("ProductId", "CatalogAttributeId");
-
-                    b.HasIndex("CatalogAttributeId");
-
-                    b.ToTable("ProductCatalogAttributes");
-                });
-
-            modelBuilder.Entity("eCommerce.Domain.Product.ProductCategory", b =>
-                {
-                    b.Property<int>("ProductId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("CategoryId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("ProductId", "CategoryId");
-
-                    b.HasIndex("CategoryId");
-
-                    b.ToTable("ProductCategories");
-                });
-
-            modelBuilder.Entity("eCommerce.Domain.Product.ProductImage", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("DisplayOrder")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("ProductId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Url")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ProductId");
-
-                    b.ToTable("ProductImages");
-                });
-
-            modelBuilder.Entity("eCommerce.Domain.Product.ProductOption", b =>
-                {
-                    b.Property<int>("ProductId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("OptionId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("ProductId", "OptionId");
-
-                    b.HasIndex("OptionId");
-
-                    b.ToTable("ProductOptions");
-                });
-
-            modelBuilder.Entity("eCommerce.Domain.Product.ProductOptionValueImage", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("DisplayOrder")
-                        .HasColumnType("integer");
-
-                    b.Property<bool>("IsDefault")
-                        .HasColumnType("boolean");
-
-                    b.Property<int>("ProductId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Url")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ProductId");
-
-                    b.ToTable("ProductOptionValueImages");
-                });
-
-            modelBuilder.Entity("eCommerce.Domain.Product.ProductOptionValueImageOptionValue", b =>
-                {
-                    b.Property<int>("ProductOptionValueImageId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("OptionValueId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("ProductOptionValueImageId", "OptionValueId");
-
-                    b.HasIndex("OptionValueId");
-
-                    b.ToTable("ProductOptionValueImageOptionValues");
-                });
-
-            modelBuilder.Entity("eCommerce.Domain.Product.ProductVariant", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<decimal>("Price")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.Property<int>("ProductId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Sku")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
-
-                    b.Property<int>("StockQuantity")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<uint>("Version")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("xid")
-                        .HasColumnName("xmin");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Sku")
-                        .IsUnique();
-
-                    b.HasIndex("ProductId", "Sku");
-
-                    b.ToTable("ProductVariants");
-                });
-
-            modelBuilder.Entity("eCommerce.Domain.Product.ProductVariantOptionValue", b =>
-                {
-                    b.Property<int>("ProductVariantId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("OptionValueId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("ProductVariantId", "OptionValueId");
-
-                    b.HasIndex("OptionValueId");
-
-                    b.ToTable("ProductVariantOptionValues");
                 });
 
             modelBuilder.Entity("eCommerce.Infrastructure.Identity.ApplicationUser", b =>
@@ -715,6 +687,51 @@ namespace eCommerce.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("ProductCategories", b =>
+                {
+                    b.HasOne("eCommerce.Domain.Catalog.Categories.Category", null)
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("eCommerce.Domain.Catalog.Products.Product", null)
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("ProductOptions", b =>
+                {
+                    b.HasOne("eCommerce.Domain.Catalog.Options.Option", null)
+                        .WithMany()
+                        .HasForeignKey("OptionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("eCommerce.Domain.Catalog.Products.Product", null)
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("ProductVariantOptionValues", b =>
+                {
+                    b.HasOne("eCommerce.Domain.Catalog.Options.OptionValue", null)
+                        .WithMany()
+                        .HasForeignKey("OptionValueId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("eCommerce.Domain.Catalog.ProductVariants.ProductVariant", null)
+                        .WithMany()
+                        .HasForeignKey("ProductVariantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("eCommerce.Domain.Cart.CartItem", b =>
                 {
                     b.HasOne("eCommerce.Domain.Cart.Cart", "Cart")
@@ -723,7 +740,7 @@ namespace eCommerce.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("eCommerce.Domain.Product.ProductVariant", "ProductVariant")
+                    b.HasOne("eCommerce.Domain.Catalog.ProductVariants.ProductVariant", "ProductVariant")
                         .WithMany()
                         .HasForeignKey("ProductVariantId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -734,37 +751,89 @@ namespace eCommerce.Infrastructure.Persistence.Migrations
                     b.Navigation("ProductVariant");
                 });
 
-            modelBuilder.Entity("eCommerce.Domain.Metadata.OptionValue", b =>
+            modelBuilder.Entity("eCommerce.Domain.Catalog.Options.OptionValue", b =>
                 {
-                    b.HasOne("eCommerce.Domain.Metadata.Option", "Option")
-                        .WithMany("OptionValues")
+                    b.HasOne("eCommerce.Domain.Catalog.Options.Option", null)
+                        .WithMany("Values")
                         .HasForeignKey("OptionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Option");
                 });
 
-            modelBuilder.Entity("eCommerce.Domain.Order.OrderItem", b =>
+            modelBuilder.Entity("eCommerce.Domain.Catalog.ProductVariants.ProductVariant", b =>
                 {
-                    b.HasOne("eCommerce.Domain.Order.Order", "Order")
-                        .WithMany("OrderItems")
-                        .HasForeignKey("OrderId")
+                    b.HasOne("eCommerce.Domain.Catalog.Products.Product", null)
+                        .WithMany("Variants")
+                        .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("eCommerce.Domain.Product.ProductVariant", "ProductVariant")
-                        .WithMany()
-                        .HasForeignKey("ProductVariantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                    b.OwnsOne("eCommerce.Domain.Catalog.ProductVariants.ProductVariantValueObjects.Money", "Price", b1 =>
+                        {
+                            b1.Property<int>("ProductVariantId")
+                                .HasColumnType("integer");
 
-                    b.Navigation("Order");
+                            b1.Property<decimal>("Amount")
+                                .HasPrecision(18, 2)
+                                .HasColumnType("numeric(18,2)")
+                                .HasColumnName("Price");
 
-                    b.Navigation("ProductVariant");
+                            b1.HasKey("ProductVariantId");
+
+                            b1.ToTable("ProductVariants");
+
+                            b1.WithOwner()
+                                .HasForeignKey("ProductVariantId");
+                        });
+
+                    b.Navigation("Price");
                 });
 
-            modelBuilder.Entity("eCommerce.Domain.Product.ProductCatalogAttribute", b =>
+            modelBuilder.Entity("eCommerce.Domain.Catalog.Products.Product", b =>
+                {
+                    b.OwnsOne("eCommerce.Domain.Catalog.Products.ProductValueObjects.ProductDescription", "Description", b1 =>
+                        {
+                            b1.Property<int>("ProductId")
+                                .HasColumnType("integer");
+
+                            b1.Property<string>("Value")
+                                .HasColumnType("text")
+                                .HasColumnName("Description");
+
+                            b1.HasKey("ProductId");
+
+                            b1.ToTable("Products");
+
+                            b1.WithOwner()
+                                .HasForeignKey("ProductId");
+                        });
+
+                    b.OwnsOne("eCommerce.Domain.Catalog.Products.ProductValueObjects.ProductName", "Name", b1 =>
+                        {
+                            b1.Property<int>("ProductId")
+                                .HasColumnType("integer");
+
+                            b1.Property<string>("Value")
+                                .IsRequired()
+                                .HasColumnType("text")
+                                .HasColumnName("Name");
+
+                            b1.HasKey("ProductId");
+
+                            b1.ToTable("Products");
+
+                            b1.WithOwner()
+                                .HasForeignKey("ProductId");
+                        });
+
+                    b.Navigation("Description")
+                        .IsRequired();
+
+                    b.Navigation("Name")
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("eCommerce.Domain.Catalog.Products.ProductCatalogAttribute", b =>
                 {
                     b.HasOne("eCommerce.Domain.Metadata.CatalogAttribute", "CatalogAttribute")
                         .WithMany("ProductCatalogAttributes")
@@ -772,7 +841,7 @@ namespace eCommerce.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("eCommerce.Domain.Product.Product", "Product")
+                    b.HasOne("eCommerce.Domain.Catalog.Products.Product", "Product")
                         .WithMany("ProductCatalogAttributes")
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -783,28 +852,9 @@ namespace eCommerce.Infrastructure.Persistence.Migrations
                     b.Navigation("Product");
                 });
 
-            modelBuilder.Entity("eCommerce.Domain.Product.ProductCategory", b =>
+            modelBuilder.Entity("eCommerce.Domain.Catalog.Products.ProductImage", b =>
                 {
-                    b.HasOne("eCommerce.Domain.Metadata.Category", "Category")
-                        .WithMany("ProductCategories")
-                        .HasForeignKey("CategoryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("eCommerce.Domain.Product.Product", "Product")
-                        .WithMany("ProductCategories")
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Category");
-
-                    b.Navigation("Product");
-                });
-
-            modelBuilder.Entity("eCommerce.Domain.Product.ProductImage", b =>
-                {
-                    b.HasOne("eCommerce.Domain.Product.Product", "Product")
+                    b.HasOne("eCommerce.Domain.Catalog.Products.Product", "Product")
                         .WithMany("ProductImages")
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -813,28 +863,9 @@ namespace eCommerce.Infrastructure.Persistence.Migrations
                     b.Navigation("Product");
                 });
 
-            modelBuilder.Entity("eCommerce.Domain.Product.ProductOption", b =>
+            modelBuilder.Entity("eCommerce.Domain.Catalog.Products.ProductOptionValueImage", b =>
                 {
-                    b.HasOne("eCommerce.Domain.Metadata.Option", "Option")
-                        .WithMany("ProductOptions")
-                        .HasForeignKey("OptionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("eCommerce.Domain.Product.Product", "Product")
-                        .WithMany("ProductOptions")
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Option");
-
-                    b.Navigation("Product");
-                });
-
-            modelBuilder.Entity("eCommerce.Domain.Product.ProductOptionValueImage", b =>
-                {
-                    b.HasOne("eCommerce.Domain.Product.Product", "Product")
+                    b.HasOne("eCommerce.Domain.Catalog.Products.Product", "Product")
                         .WithMany("ProductOptionValueImages")
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -843,15 +874,15 @@ namespace eCommerce.Infrastructure.Persistence.Migrations
                     b.Navigation("Product");
                 });
 
-            modelBuilder.Entity("eCommerce.Domain.Product.ProductOptionValueImageOptionValue", b =>
+            modelBuilder.Entity("eCommerce.Domain.Catalog.Products.ProductOptionValueImageOptionValue", b =>
                 {
-                    b.HasOne("eCommerce.Domain.Metadata.OptionValue", "OptionValue")
+                    b.HasOne("eCommerce.Domain.Catalog.Options.OptionValue", "OptionValue")
                         .WithMany("ProductOptionValues")
                         .HasForeignKey("OptionValueId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("eCommerce.Domain.Product.ProductOptionValueImage", "ProductOptionValueImage")
+                    b.HasOne("eCommerce.Domain.Catalog.Products.ProductOptionValueImage", "ProductOptionValueImage")
                         .WithMany("OptionValues")
                         .HasForeignKey("ProductOptionValueImageId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -862,32 +893,21 @@ namespace eCommerce.Infrastructure.Persistence.Migrations
                     b.Navigation("ProductOptionValueImage");
                 });
 
-            modelBuilder.Entity("eCommerce.Domain.Product.ProductVariant", b =>
+            modelBuilder.Entity("eCommerce.Domain.Order.OrderItem", b =>
                 {
-                    b.HasOne("eCommerce.Domain.Product.Product", "Product")
-                        .WithMany("ProductVariants")
-                        .HasForeignKey("ProductId")
+                    b.HasOne("eCommerce.Domain.Order.Order", "Order")
+                        .WithMany("OrderItems")
+                        .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Product");
-                });
-
-            modelBuilder.Entity("eCommerce.Domain.Product.ProductVariantOptionValue", b =>
-                {
-                    b.HasOne("eCommerce.Domain.Metadata.OptionValue", "OptionValue")
-                        .WithMany("ProductVariantOptionValues")
-                        .HasForeignKey("OptionValueId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("eCommerce.Domain.Product.ProductVariant", "ProductVariant")
-                        .WithMany("ProductVariantOptionValues")
+                    b.HasOne("eCommerce.Domain.Catalog.ProductVariants.ProductVariant", "ProductVariant")
+                        .WithMany()
                         .HasForeignKey("ProductVariantId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("OptionValue");
+                    b.Navigation("Order");
 
                     b.Navigation("ProductVariant");
                 });
@@ -897,58 +917,40 @@ namespace eCommerce.Infrastructure.Persistence.Migrations
                     b.Navigation("Items");
                 });
 
-            modelBuilder.Entity("eCommerce.Domain.Metadata.CatalogAttribute", b =>
+            modelBuilder.Entity("eCommerce.Domain.Catalog.Options.Option", b =>
                 {
-                    b.Navigation("ProductCatalogAttributes");
+                    b.Navigation("Values");
                 });
 
-            modelBuilder.Entity("eCommerce.Domain.Metadata.Category", b =>
-                {
-                    b.Navigation("ProductCategories");
-                });
-
-            modelBuilder.Entity("eCommerce.Domain.Metadata.Option", b =>
-                {
-                    b.Navigation("OptionValues");
-
-                    b.Navigation("ProductOptions");
-                });
-
-            modelBuilder.Entity("eCommerce.Domain.Metadata.OptionValue", b =>
+            modelBuilder.Entity("eCommerce.Domain.Catalog.Options.OptionValue", b =>
                 {
                     b.Navigation("ProductOptionValues");
-
-                    b.Navigation("ProductVariantOptionValues");
                 });
 
-            modelBuilder.Entity("eCommerce.Domain.Order.Order", b =>
-                {
-                    b.Navigation("OrderItems");
-                });
-
-            modelBuilder.Entity("eCommerce.Domain.Product.Product", b =>
+            modelBuilder.Entity("eCommerce.Domain.Catalog.Products.Product", b =>
                 {
                     b.Navigation("ProductCatalogAttributes");
-
-                    b.Navigation("ProductCategories");
 
                     b.Navigation("ProductImages");
 
                     b.Navigation("ProductOptionValueImages");
 
-                    b.Navigation("ProductOptions");
-
-                    b.Navigation("ProductVariants");
+                    b.Navigation("Variants");
                 });
 
-            modelBuilder.Entity("eCommerce.Domain.Product.ProductOptionValueImage", b =>
+            modelBuilder.Entity("eCommerce.Domain.Catalog.Products.ProductOptionValueImage", b =>
                 {
                     b.Navigation("OptionValues");
                 });
 
-            modelBuilder.Entity("eCommerce.Domain.Product.ProductVariant", b =>
+            modelBuilder.Entity("eCommerce.Domain.Metadata.CatalogAttribute", b =>
                 {
-                    b.Navigation("ProductVariantOptionValues");
+                    b.Navigation("ProductCatalogAttributes");
+                });
+
+            modelBuilder.Entity("eCommerce.Domain.Order.Order", b =>
+                {
+                    b.Navigation("OrderItems");
                 });
 #pragma warning restore 612, 618
         }

@@ -1,12 +1,15 @@
 ﻿using eCommerce.Application.Features.Orders.Commands.CreateOrder;
 using eCommerce.Domain.Cart;
-using eCommerce.Domain.Product;
 using eCommerce.Infrastructure.Persistence;
 using eCommerce.Tests.Infrastructure;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using eCommerce.Domain.Catalog.Products;
+using eCommerce.Domain.Catalog.ProductVariants;
+using eCommerce.Domain.Catalog.Products.ProductValueObjects;
+using eCommerce.Domain.Catalog.ProductVariants.ProductVariantValueObjects;
 
 namespace eCommerce.Tests.Application.Orders
 {
@@ -28,19 +31,15 @@ namespace eCommerce.Tests.Application.Orders
             var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
             var context = scope.ServiceProvider.GetRequiredService<eCommerceContext>();
 
-            var product = new Product
-            {
-                Name = "Phone",
-                Description = "Test phone"
-            };
+            var product = new Product(new ProductName("Phone"));
+            product.SetDescription(new ProductDescription("Test phone"));
 
-            var variant = new ProductVariant
-            {
-                Product = product,
-                Sku = "PHONE-1",
-                Price = 500,
-                StockQuantity = 10
-            };
+            var variant = new ProductVariant(new ProductVariantSku("PHONE-1"));
+            variant.SetPrice(new Money(500));
+            variant.SetStockQuantity(new StockQuantity(10));
+
+            product.AddVariant(variant);
+
 
             context.Products.Add(product);
             context.ProductVariants.Add(variant);

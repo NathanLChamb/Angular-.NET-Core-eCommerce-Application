@@ -24,28 +24,28 @@ namespace eCommerce.Api.Controllers
 
         [AllowAnonymous]
         [HttpGet]
-        public async Task<ActionResult<PagedResult<ReadOptionDto>>> GetAllOptions([FromQuery]PaginationParams pageParams)
+        public async Task<ActionResult<PagedResult<OptionResponse>>> GetAllOptions([FromQuery]PaginationParams pageParams)
         {
             var options = await _mediator.Send(new GetAllOptionsQuery(pageParams));
             return Ok(options);
         }
         [AllowAnonymous]
         [HttpGet("{id}")]
-        public async Task<ActionResult<ReadOptionDto>> GetOptionById(int id)
+        public async Task<ActionResult<OptionResponse>> GetOptionById(int id)
         {
             var option = await _mediator.Send(new GetOptionByIdQuery(id));
             return Ok(option);
         }
         [Authorize(Roles = Roles.Admin)]
         [HttpPost]
-        public async Task<ActionResult<ReadOptionDto>> CreateOption([FromBody]CreateOptionDto dto)
+        public async Task<ActionResult<OptionResponse>> CreateOption([FromBody]CreateOptionRequest dto)
         {
             var option = await _mediator.Send(new CreateOptionCommand(dto.Name, dto.OptionValues));
             return CreatedAtAction(nameof(GetOptionById), new { id = option.Id }, option);
         }
         [Authorize(Roles = Roles.Admin)]
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateOption(int id, UpdateOptionDto dto)
+        public async Task<IActionResult> UpdateOption(int id, UpdateOptionRequest dto)
         {
             await _mediator.Send(new UpdateOptionCommand(id, dto.Name, dto.OptionValues));
             return NoContent();

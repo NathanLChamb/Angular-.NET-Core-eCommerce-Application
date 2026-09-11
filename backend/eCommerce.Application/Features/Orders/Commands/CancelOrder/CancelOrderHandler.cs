@@ -3,6 +3,7 @@ using eCommerce.Application.Features.Orders.Commands.CancelOrder;
 using eCommerce.Application.Features.Orders.DTOs;
 using eCommerce.Application.Features.Orders.Mappings;
 using eCommerce.Application.Interfaces;
+using eCommerce.Domain.Catalog.ProductVariants.ProductVariantValueObjects;
 using eCommerce.Domain.Order;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -30,7 +31,7 @@ public class CancelOrderHandler : IRequestHandler<CancelOrderCommand, ReadOrderD
         {
             var variant = await _context.ProductVariants
                 .FirstAsync(pv => pv.Id == item.ProductVariantId, ct);
-            variant.StockQuantity += item.Quantity;
+            variant.IncreaseStock(new StockQuantity(item.Quantity));
         }
         order.Status = OrderStatus.Cancelled;
 

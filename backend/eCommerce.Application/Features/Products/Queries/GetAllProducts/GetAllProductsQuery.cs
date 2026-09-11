@@ -7,5 +7,5 @@ namespace eCommerce.Application.Features.Products.Queries.GetAllProducts
 {
     public record GetAllProductsQuery(
         ProductSearchFilter Filter
-        ) : IRequest<PagedResult<ReadProductDto>>;
+        ) : IRequest<PagedResult<ProductResponse>>;
 }

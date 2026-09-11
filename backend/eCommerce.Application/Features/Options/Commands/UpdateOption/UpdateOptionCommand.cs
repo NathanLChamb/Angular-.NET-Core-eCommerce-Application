@@ -6,6 +6,6 @@ namespace eCommerce.Application.Features.Options.Commands.UpdateOption
     public record UpdateOptionCommand(
         int Id,
         string Name,
-        List<UpdateOptionValueDto> OptionValues
+        List<UpdateOptionValueRequest> OptionValues
     ) : IRequest;
 }

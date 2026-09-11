@@ -1,42 +1,36 @@
 ﻿using eCommerce.Application.Features.Options.DTOs;
 using eCommerce.Application.Interfaces;
-using eCommerce.Domain.Metadata;
+using eCommerce.Application.Interfaces.Queries;
+using eCommerce.Application.Interfaces.Repositories;
+using eCommerce.Application.Mapping;
+using eCommerce.Domain.Catalog.Options;
 using MediatR;
 
 namespace eCommerce.Application.Features.Options.Commands.CreateOption
 {
-    public class CreateOptionHandler : IRequestHandler<CreateOptionCommand, ReadOptionDto>
+    public class CreateOptionHandler : IRequestHandler<CreateOptionCommand, OptionResponse>
     {
-        private readonly IeCommerceContext _context;
-        public CreateOptionHandler(IeCommerceContext context)
+        private readonly IOptionRepository _options;
+        private readonly IUnitOfWork _unitOfWork;
+        public CreateOptionHandler(IOptionRepository options, IUnitOfWork unitOfWork)
         {
-            _context = context;
+            _options = options;
+            _unitOfWork = unitOfWork;
         }
 
-        public async Task<ReadOptionDto> Handle(CreateOptionCommand request, CancellationToken ct)
+        public async Task<OptionResponse> Handle(CreateOptionCommand request, CancellationToken ct)
         {
-            var newOption = new Option
-            {
-                Name = request.Name,
-                OptionValues = request.OptionValues.Select(value => new OptionValue
-                {
-                    Value = value
-                }).ToList()
-            };
+            var option = new Option(request.Name);
 
-            _context.Options.Add(newOption);
-            await _context.SaveChangesAsync(ct);
-
-            return new ReadOptionDto
+            foreach (var value in request.OptionValues)
             {
-                Id = newOption.Id,
-                Name = newOption.Name,
-                OptionValues = newOption.OptionValues.Select(ov => new ReadOptionValueDto
-                {
-                    Id = ov.Id,
-                    Value = ov.Value
-                }).ToList()
-            };
+                option.AddValue(new OptionValue(value));
+            }
+
+            await _options.AddAsync(option, ct);
+            await _unitOfWork.SaveChangesAsync(ct);
+
+            return OptionProjection.MapToResponse(option);
         }
     }
 }

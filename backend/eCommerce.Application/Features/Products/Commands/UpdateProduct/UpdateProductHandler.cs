@@ -1,111 +1,79 @@
 ﻿using eCommerce.Application.Exceptions;
-using eCommerce.Application.Features.Products.Interfaces;
 using eCommerce.Application.Interfaces;
-using eCommerce.Domain.Product;
+using eCommerce.Application.Interfaces.Repositories;
+using eCommerce.Domain.Catalog.Products.ProductValueObjects;
+using eCommerce.Domain.Catalog.ProductVariants.ProductVariantValueObjects;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace eCommerce.Application.Features.Products.Commands.UpdateProduct
 {
     public class UpdateProductHandler : IRequestHandler<UpdateProductCommand>
     {
-        private readonly IeCommerceContext _context;
-        private readonly IProductValidationService _validationService;
-        public UpdateProductHandler(IeCommerceContext context, IProductValidationService validationService)
+        private readonly IProductRepository _products;
+        private readonly ICategoryRepository _categories;
+        private readonly IOptionRepository _options;
+        private readonly IUnitOfWork _unitOfWork;
+        public UpdateProductHandler(IProductRepository products,
+            ICategoryRepository categories, IOptionRepository options,
+            IUnitOfWork unitOfWork)
         {
-            _context = context;
-            _validationService = validationService;
+            _products = products;
+            _categories = categories;
+            _options = options;
+            _unitOfWork = unitOfWork;
         }
 
         public async Task Handle(UpdateProductCommand request, CancellationToken ct)
         {
-            await _validationService.ValidateCategoriesAsync(request.CategoryIds, ct);
-            await _validationService.ValidateOptionsAsync(request.OptionIds, ct);
-            var optionValueIds = request.ProductVariants
-                .SelectMany(v => v.OptionValueIds)
-                .ToList();
-            await _validationService.ValidateOptionValuesAsync(optionValueIds, ct);
-            await _validationService.ValidateOptionValuesBelongToOptionsAsync(request.OptionIds, optionValueIds, ct);
+            var product = await _products.GetByIdAsync(request.Id, ct);
+            if (product == null) throw new NotFoundException(
+                    "Product for update not found from provided ID");
 
-            var product = await _context.Products
-                .Include(p => p.ProductCategories)
-                .Include(p => p.ProductOptions)
-                .Include(p => p.ProductVariants)
-                    .ThenInclude(pv => pv.ProductVariantOptionValues)
-                .FirstOrDefaultAsync(p => p.Id == request.Id, ct);
-            if (product == null) throw new NotFoundException("Product for update not found from provided ID");
+            var categories = await _categories.GetByIdsAsync(request.CategoryIds, ct);
+            if (categories.Count != request.CategoryIds.Distinct().Count()) throw new NotFoundException(
+                    "One or more categories were not found.");
 
-            product.Name = request.Name ?? product.Name;
-            product.Description = request.Description ?? product.Description;
-            product.UpdatedAt = DateTime.UtcNow;
+            var options = await _options.GetByIdsAsync(request.OptionIds, ct);
+            if (options.Count != request.OptionIds.Distinct().Count()) throw new NotFoundException(
+                    "One or more options were not found.");
 
-            product.ProductCategories.RemoveAll(existing => !request.CategoryIds.Contains(existing.CategoryId));
-            product.ProductCategories.AddRange(request.CategoryIds
-                .Where(categoryId => !product.ProductCategories
-                .Any(existing => existing.CategoryId == categoryId))
-                .Select(categoryId => new ProductCategory
-                {
-                    CategoryId = categoryId
-                })
-            );
+            var optionValuesById = options.SelectMany(o => o.Values)
+                .ToDictionary(v => v.Id);
 
-            product.ProductOptions.RemoveAll(existing => !request.OptionIds.Contains(existing.OptionId));
-            product.ProductOptions.AddRange(request.OptionIds
-                .Where(optionId => !product.ProductOptions
-                .Any(existing => existing.OptionId == optionId))
-                .Select(optionId => new ProductOption
-                {
-                    OptionId = optionId
-                })
-            );
+            product.Rename(new ProductName(request.Name));
+            product.SetDescription(new ProductDescription(request.Description));
 
-            product.ProductVariants.RemoveAll(existing => !request.ProductVariants.Any(_request => _request.Id == existing.Id));
-            product.ProductVariants.AddRange(request.ProductVariants
-                .Where(_request => !_request.Id.HasValue)
-                .Select(_request => new ProductVariant
-                {
-                    Sku = _request.Sku,
-                    Price = _request.Price,
-                    StockQuantity = _request.StockQuantity,
-                    ProductVariantOptionValues = _request.OptionValueIds.Select(optionValueId => new ProductVariantOptionValue
-                    {
-                        OptionValueId = optionValueId
-                    }).ToList()
-                })
-            );
-            foreach (var existingVariant in product.ProductVariants)
+            product.ReplaceCategories(categories);
+            product.ReplaceOptions(options);
+
+            product.RemoveVariantsNotIn(
+                request.ProductVariants
+                    .Where(v => v.Id.HasValue)
+                    .Select(v => v.Id!.Value));
+
+            foreach (var variantRequest in request.ProductVariants)
             {
-                var requestVariant = request.ProductVariants
-                    .FirstOrDefault(_request => _request.Id == existingVariant.Id);
-
-                if (requestVariant != null)
+                var optionValues = variantRequest.OptionValueIds.Select(optionValueId =>
                 {
-                    if (requestVariant.Sku != existingVariant.Sku)
-                    {
-                        existingVariant.Sku = requestVariant.Sku;
-                    }
-                    if (requestVariant.Price != existingVariant.Price)
-                    {
-                        existingVariant.Price = requestVariant.Price;
-                    }
-                    if (requestVariant.StockQuantity != existingVariant.StockQuantity)
-                    {
-                        existingVariant.StockQuantity = requestVariant.StockQuantity;
-                    }
+                    if (!optionValuesById.TryGetValue(optionValueId, out var optionValue)) throw new NotFoundException(
+                            $"Option value with ID {optionValueId} was not found among the selected product options.");
 
-                    existingVariant.ProductVariantOptionValues.RemoveAll(existing => !requestVariant.OptionValueIds.Contains(existing.OptionValueId));
-                    existingVariant.ProductVariantOptionValues.AddRange(requestVariant.OptionValueIds
-                        .Where(optionValueId => !existingVariant.ProductVariantOptionValues
-                        .Any(existing => existing.OptionValueId == optionValueId))
-                        .Select(optionValueId => new ProductVariantOptionValue
-                        {
-                            OptionValueId = optionValueId
-                        })
-                    );
+                    return optionValue;
+                }).ToList();
+
+                if (variantRequest.Id.HasValue)
+                {
+                    product.UpdateVariant(variantRequest.Id.Value, new ProductVariantSku(variantRequest.Sku),
+                        new Money(variantRequest.Price), new StockQuantity(variantRequest.StockQuantity), optionValues);
+                }
+                else
+                {
+                    product.AddVariant(new ProductVariantSku(variantRequest.Sku), new Money(variantRequest.Price),
+                        new StockQuantity(variantRequest.StockQuantity), optionValues);
                 }
             }
 
-            await _context.SaveChangesAsync(ct);
+            await _unitOfWork.SaveChangesAsync(ct);
         }
     }
 }

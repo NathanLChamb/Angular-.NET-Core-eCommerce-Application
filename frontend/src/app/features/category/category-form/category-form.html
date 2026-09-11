@@ -12,17 +12,6 @@
                         <small>Name must be less than 50 characters long</small>
                     }</div>
             }</div>
-    <div>
-        <label for="description">Description:</label>
-        <textarea id="description" formControlName="description" rows="7" maxlength="300"></textarea>
-            @if (description.invalid && (description.dirty || description.touched)) {
-                <div>
-                    @if (description.hasError('required')) {
-                        <small>Description is required</small>
-                    }
-                    @if (description.hasError('maxlength')) {
-                        <small>Description must be less than 300 characters long</small>
-                    }</div>
-            }</div>
+
     <button type="submit" [disabled]="form.invalid || category.isLoading()">Submit</button>
 </form>

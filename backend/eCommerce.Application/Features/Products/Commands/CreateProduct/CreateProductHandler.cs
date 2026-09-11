@@ -1,64 +1,83 @@
-﻿using eCommerce.Application.Features.Products.DTOs;
-using eCommerce.Application.Features.Products.Interfaces;
-using eCommerce.Application.Features.Products.Mappings;
+﻿using eCommerce.Application.Exceptions;
+using eCommerce.Application.Features.Products.DTOs;
 using eCommerce.Application.Interfaces;
-using eCommerce.Domain.Product;
+using eCommerce.Application.Interfaces.Queries;
+using eCommerce.Application.Interfaces.Repositories;
+using eCommerce.Domain.Catalog.Products;
+using eCommerce.Domain.Catalog.Products.ProductValueObjects;
+using eCommerce.Domain.Catalog.ProductVariants.ProductVariantValueObjects;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace eCommerce.Application.Features.Products.Commands.CreateProduct
 {
-    public class CreateProductHandler : IRequestHandler<CreateProductCommand, ReadProductDto>
+    public class CreateProductHandler : IRequestHandler<CreateProductCommand, ProductResponse>
     {
-        private readonly IeCommerceContext _context;
-        private readonly IProductValidationService _validationService;
-        public CreateProductHandler(IeCommerceContext context, IProductValidationService validationService)
+        private readonly IProductRepository _products;
+        private readonly ICategoryRepository _categories;
+        private readonly IOptionRepository _options;
+        private readonly IProductQueries _queries;
+        private readonly IUnitOfWork _unitOfWork;
+        public CreateProductHandler(IProductRepository products,
+            ICategoryRepository categories, IOptionRepository options,
+            IProductQueries queries, IUnitOfWork unitOfWork)
         {
-            _context = context;
-            _validationService = validationService;
+            _products = products;
+            _categories = categories;
+            _options = options;
+            _queries = queries;
+            _unitOfWork = unitOfWork;
         }
-        public async Task<ReadProductDto> Handle(CreateProductCommand request, CancellationToken ct)
+        public async Task<ProductResponse> Handle(CreateProductCommand request, CancellationToken ct)
         {
-            await _validationService.ValidateCategoriesAsync(request.CategoryIds, ct);
-            await _validationService.ValidateOptionsAsync(request.OptionIds, ct);
-            var optionValueIds = request.ProductVariants
-                .SelectMany(v => v.OptionValueIds)
-                .ToList();
-            await _validationService.ValidateOptionValuesAsync(optionValueIds, ct);
-            await _validationService.ValidateOptionValuesBelongToOptionsAsync(request.OptionIds, optionValueIds, ct);
+            var product = new Product(new ProductName(request.Name));
 
-            var newProduct = new Product
+            product.SetDescription(new ProductDescription(request.Description));
+
+            var categories = await _categories.GetByIdsAsync(request.CategoryIds, ct);
+
+            if (categories.Count != request.CategoryIds.Distinct().Count()) throw new NotFoundException(
+                "One or more categories were not found.");
+
+            foreach (var category in categories)
             {
-                Name = request.Name,
-                Description = request.Description,
-                ProductCategories = request.CategoryIds.Select(categoryId => new ProductCategory
-                {
-                    CategoryId = categoryId
-                }).ToList(),
-                ProductOptions = request.OptionIds.Select(optionId => new ProductOption
-                {
-                    OptionId = optionId
-                }).ToList(),
-                ProductVariants = request.ProductVariants.Select(pv => new ProductVariant
-                {
-                    Sku = pv.Sku,
-                    Price = pv.Price,
-                    StockQuantity = pv.StockQuantity,
-                    ProductVariantOptionValues = pv.OptionValueIds.Select(optionValueId => new ProductVariantOptionValue
+                product.AddCategory(category);
+            }
+
+            var options = await _options.GetByIdsAsync(request.OptionIds, ct);
+
+            if (options.Count != request.OptionIds.Distinct().Count()) throw new NotFoundException(
+                "One or more options were not found.");
+
+            foreach (var option in options)
+            {
+                product.AddOption(option);
+            }
+
+            var optionValuesById = options.SelectMany(o => o.Values)
+                    .ToDictionary(v => v.Id);
+
+            foreach (var variantRequest in request.ProductVariants)
+            {
+                var optionValues = variantRequest.OptionValueIds
+                    .Select(optionValueId =>
                     {
-                        OptionValueId = optionValueId
-                    }).ToList()
-                }).ToList()
-            };
+                        if (!optionValuesById.TryGetValue(optionValueId, out var optionValue))
+                            throw new NotFoundException(
+                                $"Option value with ID {optionValueId} was not found among the selected product options.");
 
-            _context.Products.Add(newProduct);
-            await _context.SaveChangesAsync(ct);
+                        return optionValue;
+                    })
+                    .ToList();
 
-            return await _context.Products
-                .AsNoTracking()
-                .Where(p => p.Id == newProduct.Id)
-                .ToProductDto()
-                .FirstAsync(ct);
+                product.AddVariant(new ProductVariantSku(variantRequest.Sku), new Money(variantRequest.Price),
+                    new StockQuantity(variantRequest.StockQuantity), optionValues);
+            }
+
+            await _products.AddAsync(product, ct);
+            await _unitOfWork.SaveChangesAsync(ct);
+
+            return await _queries.GetByIdAsync(product.Id, ct) ?? throw new NotFoundException(
+                "Product could not be retrieved after saving");
         }
     }
 }

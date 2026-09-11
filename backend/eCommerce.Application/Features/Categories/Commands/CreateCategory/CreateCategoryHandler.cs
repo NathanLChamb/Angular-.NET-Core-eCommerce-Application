@@ -1,35 +1,31 @@
 ﻿using eCommerce.Application.Features.Categories.DTOs;
+using eCommerce.Application.Features.Categories.Mappings;
 using eCommerce.Application.Interfaces;
-using eCommerce.Domain.Metadata;
+using eCommerce.Application.Interfaces.Queries;
+using eCommerce.Application.Interfaces.Repositories;
+using eCommerce.Domain.Catalog.Categories;
 using MediatR;
 
 namespace eCommerce.Application.Features.Categories.Commands.CreateCategory
 {
-    public class CreateCategoryHandler : IRequestHandler<CreateCategoryCommand, ReadCategoryDto>
+    public class CreateCategoryHandler : IRequestHandler<CreateCategoryCommand, CategoryResponse>
     {
-        private readonly IeCommerceContext _context;
-        public CreateCategoryHandler(IeCommerceContext context)
+        private readonly ICategoryRepository _categories;
+        private readonly IUnitOfWork _unitOfWork;
+        public CreateCategoryHandler(ICategoryRepository categories, ICategoryQueries queries, IUnitOfWork unitOfWork)
         {
-            _context = context;
+            _categories = categories;
+            _unitOfWork = unitOfWork;
         }
 
-        public async Task<ReadCategoryDto> Handle(CreateCategoryCommand request, CancellationToken ct)
+        public async Task<CategoryResponse> Handle(CreateCategoryCommand request, CancellationToken ct)
         {
-            var newCategory = new Category
-            {
-                Name = request.Name,
-                Description = request.Description
-            };
+            var category = new Category(request.Name);
 
-            _context.Categories.Add(newCategory);
-            await _context.SaveChangesAsync(ct);
+            await _categories.AddAsync(category, ct);
+            await _unitOfWork.SaveChangesAsync(ct);
 
-            return new ReadCategoryDto
-            {
-                Id = newCategory.Id,
-                Name = newCategory.Name,
-                Description = newCategory.Description
-            };
+            return CategoryProjection.MapToResponse(category);
         }
     }
 }

@@ -1,22 +1,23 @@
 ﻿using eCommerce.Application.Features.Options.DTOs;
+using eCommerce.Domain.Catalog.Options;
 using eCommerce.Domain.Metadata;
 
 namespace eCommerce.Application.Mapping
 {
     public static class OptionProjection
     {
-        public static IQueryable<ReadOptionDto> ToOptionDto(this IQueryable<Option> query)
+        public static OptionResponse MapToResponse(this Option option)
         {
-            return query.Select(o => new ReadOptionDto
+            return new OptionResponse
             {
-                Id = o.Id,
-                Name = o.Name,
-                OptionValues = o.OptionValues.Select(ov => new ReadOptionValueDto
+                Id = option.Id,
+                Name = option.Name,
+                OptionValues = option.Values.Select(value => new OptionValueResponse
                 {
-                    Id = ov.Id,
-                    Value = ov.Value
+                    Id = value.Id,
+                    Value = value.Value
                 }).ToList()
-            });
+            };
         }
     }
 }

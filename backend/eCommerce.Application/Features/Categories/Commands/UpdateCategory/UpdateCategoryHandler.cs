@@ -1,26 +1,30 @@
 ﻿using eCommerce.Application.Exceptions;
 using eCommerce.Application.Interfaces;
+using eCommerce.Application.Interfaces.Queries;
+using eCommerce.Application.Interfaces.Repositories;
 using MediatR;
 
 namespace eCommerce.Application.Features.Categories.Commands.UpdateCategory
 {
     public class UpdateCategoryHandler : IRequestHandler<UpdateCategoryCommand>
     {
-        private readonly IeCommerceContext _context;
-        public UpdateCategoryHandler(IeCommerceContext context)
+        private readonly ICategoryRepository _categories;
+        private readonly IUnitOfWork _unitOfWork;
+        public UpdateCategoryHandler(ICategoryRepository categories, IUnitOfWork unitOfWork)
         {
-            _context = context;
+            _categories = categories;
+            _unitOfWork = unitOfWork;
         }
 
         public async Task Handle(UpdateCategoryCommand request, CancellationToken ct)
         {
-            var category = await _context.Categories.FindAsync(request.Id, ct);
-            if (category == null) throw new NotFoundException("Category for update not found from provided ID");
+            var category = await _categories.GetByIdAsync(request.Id, ct);
+            if (category == null) throw new NotFoundException(
+                "Category for update not found from provided ID");
 
-            category.Name = request.Name ?? category.Name;
-            category.Description = request.Description ?? category.Description;
+            category.Rename(request.Name);
 
-            await _context.SaveChangesAsync(ct);
+            await _unitOfWork.SaveChangesAsync(ct);
         }
     }
 }

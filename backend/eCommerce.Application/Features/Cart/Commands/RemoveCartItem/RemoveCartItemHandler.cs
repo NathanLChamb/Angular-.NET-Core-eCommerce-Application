@@ -1,7 +1,7 @@
 ﻿using eCommerce.Application.Exceptions;
 using eCommerce.Application.Features.Cart.DTOs;
-using eCommerce.Application.Features.Cart.Mappings;
 using eCommerce.Application.Interfaces;
+using eCommerce.Application.Interfaces.Queries;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,10 +10,12 @@ namespace eCommerce.Application.Features.Cart.Commands.RemoveCartItem
     public class RemoveCartItemHandler : IRequestHandler<RemoveCartItemCommand, ReadCartDto>
     {
         private readonly IeCommerceContext _context;
+        private readonly ICartQueries _queries;
 
-        public RemoveCartItemHandler(IeCommerceContext context)
+        public RemoveCartItemHandler(IeCommerceContext context, ICartQueries queries)
         {
             _context = context;
+            _queries = queries;
         }
 
         public async Task<ReadCartDto> Handle(
@@ -44,10 +46,15 @@ namespace eCommerce.Application.Features.Cart.Commands.RemoveCartItem
 
             await _context.SaveChangesAsync(ct);
 
-            return await _context.Carts
-                .Where(c => c.Id == cart.Id)
-                .ToCartDto()
-                .FirstAsync(ct);
+            var result = await _queries.GetByIdAsync(cart.Id, ct);
+
+            if (result == null)
+            {
+                throw new NotFoundException(
+                    "Cart could not be loaded after updating the item.");
+            }
+
+            return result;
         }
     }
 }

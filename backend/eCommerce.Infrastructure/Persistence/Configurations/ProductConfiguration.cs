@@ -1,4 +1,6 @@
-﻿using eCommerce.Domain.Product;
+﻿using eCommerce.Domain.Catalog.Categories;
+using eCommerce.Domain.Catalog.Options;
+using eCommerce.Domain.Catalog.Products;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -10,37 +12,67 @@ namespace eCommerce.Infrastructure.Persistence.Configurations
         {
             builder.HasKey(p => p.Id);
 
-            builder.HasIndex(p => p.Name);
+            builder.OwnsOne(p => p.Name, name =>
+            {
+                name.Property(n => n.Value)
+                    .HasColumnName("Name")
+                    .IsRequired();
+            });
 
-            builder.Property(p => p.Name)
+            builder.OwnsOne(p => p.Description, description =>
+            {
+                description.Property(d => d.Value)
+                    .HasColumnName("Description")
+                    .IsRequired(false);
+            });
+
+            builder.HasMany(p => p.Categories)
+                .WithMany()
+                .UsingEntity<Dictionary<string, object>>("ProductCategories",
+                    category => category
+                        .HasOne<Category>()
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Cascade),
+                    product => product
+                        .HasOne<Product>()
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade),
+                    join =>
+                    {
+                        join.HasKey("ProductId", "CategoryId");
+                    });
+            builder.Navigation(p => p.Categories)
+                .HasField("_categories");
+
+            builder.HasMany(p => p.Options)
+                .WithMany()
+                .UsingEntity<Dictionary<string, object>>("ProductOptions",
+                    option => option
+                        .HasOne<Option>()
+                        .WithMany()
+                        .HasForeignKey("OptionId")
+                        .OnDelete(DeleteBehavior.Cascade),
+                    product => product
+                        .HasOne<Product>()
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade),
+                    join =>
+                    {
+                        join.HasKey("ProductId", "OptionId");
+                    });
+            builder.Navigation(p => p.Options)
+                .HasField("_options");
+
+            builder.HasMany(p => p.Variants)
+                .WithOne()
+                .HasForeignKey("ProductId")
                 .IsRequired()
-                .HasMaxLength(50);
-
-            builder.Property(p => p.Description)
-                .IsRequired()
-                .HasMaxLength(300);
-
-            builder.Property(p => p.CreatedAt)
-                .IsRequired()
-                .ValueGeneratedOnAdd();
-
-            builder.Property(p => p.UpdatedAt)
-                .IsRequired(false);
-
-            builder.HasMany(p => p.ProductVariants)
-                .WithOne(pv => pv.Product)
-                .HasForeignKey(pv => pv.ProductId)
                 .OnDelete(DeleteBehavior.Cascade);
-
-            builder.HasMany(p => p.ProductOptions)
-                .WithOne(po => po.Product)
-                .HasForeignKey(po => po.ProductId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            builder.HasMany(p => p.ProductCategories)
-                .WithOne(pc => pc.Product)
-                .HasForeignKey(pc => pc.ProductId)
-                .OnDelete(DeleteBehavior.Cascade);
+            builder.Navigation(p => p.Variants)
+                .HasField("_variants");
         }
     }
 }

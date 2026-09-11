@@ -1,6 +1,7 @@
 ﻿using eCommerce.Application.Exceptions;
 using eCommerce.Application.Features.Products.Images.DTOs;
 using eCommerce.Application.Interfaces;
+using eCommerce.Domain.Catalog.Products;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -31,7 +32,7 @@ namespace eCommerce.Application.Features.Products.Images.Commands.AddProductImag
                 throw new NotFoundException("Product not found.");
 
 
-            var image = new Domain.Product.ProductImage
+            var image = new ProductImage
             {
                 ProductId = request.ProductId,
                 Url = request.Url,

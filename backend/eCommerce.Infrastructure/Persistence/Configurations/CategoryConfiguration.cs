@@ -1,4 +1,4 @@
-﻿using eCommerce.Domain.Metadata;
+﻿using eCommerce.Domain.Catalog.Categories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -16,10 +16,6 @@ namespace eCommerce.Infrastructure.Persistence.Configurations
             builder.Property(c => c.Name)
                 .IsRequired()
                 .HasMaxLength(50);
-
-            builder.Property(c => c.Description)
-                .IsRequired()
-                .HasMaxLength(300); 
         }
     }
 }

@@ -1,6 +1,11 @@
 ﻿using eCommerce.Application.Interfaces;
+using eCommerce.Application.Interfaces.Queries;
+using eCommerce.Application.Interfaces.Repositories;
 using eCommerce.Infrastructure.Identity;
 using eCommerce.Infrastructure.Persistence;
+using eCommerce.Infrastructure.Persistence.Queries;
+using eCommerce.Infrastructure.Persistence.Repositories;
+using eCommerce.Infrastructure.Queries;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -54,8 +59,7 @@ public static class DependencyInjection
                 ValidAudience = configuration["Jwt:Audience"],
 
                 IssuerSigningKey = new SymmetricSecurityKey(
-        Encoding.UTF8.GetBytes(configuration["Jwt:Key"]!)
-    ),
+                    Encoding.UTF8.GetBytes(configuration["Jwt:Key"]!)),
 
                 NameClaimType = JwtRegisteredClaimNames.Email,
                 RoleClaimType = ClaimTypes.Role
@@ -67,6 +71,16 @@ public static class DependencyInjection
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IdentitySeeder>();
 
+        services.AddScoped<ICartQueries, CartQueries>();
+        services.AddScoped<IProductQueries, ProductQueries>();
+        services.AddScoped<IOptionQueries, OptionQueries>();
+        services.AddScoped<ICategoryQueries, CategoryQueries>();
+
+        services.AddScoped<IProductRepository, ProductRepository>();
+        services.AddScoped<IOptionRepository, OptionRepository>();
+        services.AddScoped<ICategoryRepository, CategoryRepository>();
+
+        services.AddScoped<IUnitOfWork>(provider => provider.GetRequiredService<eCommerceContext>());
 
         return services;
     }

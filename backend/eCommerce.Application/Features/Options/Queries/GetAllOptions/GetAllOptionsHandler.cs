@@ -1,42 +1,24 @@
 ﻿using eCommerce.Application.Features.Options.DTOs;
 using eCommerce.Application.Interfaces;
+using eCommerce.Application.Interfaces.Queries;
+using eCommerce.Application.Interfaces.Repositories;
 using eCommerce.Application.Mapping;
 using eCommerce.Application.Shared;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace eCommerce.Application.Features.Options.Queries.GetAllOptions
 {
-    public class GetAllOptionsHandler : IRequestHandler<GetAllOptionsQuery, PagedResult<ReadOptionDto>>
+    public class GetAllOptionsHandler : IRequestHandler<GetAllOptionsQuery, PagedResult<OptionResponse>>
     {
-        private readonly IeCommerceContext _context;
-        public GetAllOptionsHandler(IeCommerceContext context)
+        private readonly IOptionQueries _queries;
+        public GetAllOptionsHandler(IOptionQueries queries)
         {
-            _context = context;
+            _queries = queries;
         }
 
-        public async Task<PagedResult<ReadOptionDto>> Handle(GetAllOptionsQuery request, CancellationToken ct)
+        public async Task<PagedResult<OptionResponse>> Handle(GetAllOptionsQuery request, CancellationToken ct)
         {
-            var query = _context.Options
-                .AsNoTracking()
-                .OrderBy(o => o.Id);
-
-            var totalCount = await query
-                .CountAsync(ct);
-
-            var options = await query
-                .Skip((request.pageParams.PageNumber - 1) * request.pageParams.PageSize)
-                .Take(request.pageParams.PageSize)
-                .ToOptionDto()
-                .ToListAsync(ct);
-
-            return new PagedResult<ReadOptionDto>
-            {
-                Items = options,
-                TotalCount = totalCount,
-                PageNumber = request.pageParams.PageNumber,
-                PageSize = request.pageParams.PageSize
-            };
+            return await _queries.GetPagedAsync(request.pageParams, ct);
         }
     }
 }

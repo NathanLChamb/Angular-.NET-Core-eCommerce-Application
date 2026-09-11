@@ -1,18 +1,17 @@
 ﻿using eCommerce.Application.Features.Categories.DTOs;
-using eCommerce.Domain.Metadata;
+using eCommerce.Domain.Catalog.Categories;
 
 namespace eCommerce.Application.Features.Categories.Mappings
 {
     public static class CategoryProjection
     {
-        public static IQueryable<ReadCategoryDto> ToCategoryDto(this IQueryable<Category> query)
+        public static CategoryResponse MapToResponse(this Category category)
         {
-            return query.Select(c => new ReadCategoryDto
+            return new CategoryResponse
             {
-                Id = c.Id,
-                Name = c.Name,
-                Description = c.Description,
-            });
+                Id = category.Id,
+                Name = category.Name
+            };
         }
     }
 }

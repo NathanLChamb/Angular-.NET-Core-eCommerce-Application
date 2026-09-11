@@ -1,48 +1,51 @@
 ﻿using eCommerce.Application.Exceptions;
 using eCommerce.Application.Interfaces;
-using eCommerce.Domain.Metadata;
+using eCommerce.Application.Interfaces.Repositories;
+using eCommerce.Domain.Catalog.Options;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace eCommerce.Application.Features.Options.Commands.UpdateOption
 {
     public class UpdateOptionHandler : IRequestHandler<UpdateOptionCommand>
     {
-        private readonly IeCommerceContext _context;
-        public UpdateOptionHandler(IeCommerceContext context)
+        private readonly IOptionRepository _options;
+        private readonly IUnitOfWork _unitOfWork;
+        public UpdateOptionHandler(IOptionRepository options, IUnitOfWork unitOfWork)
         {
-            _context = context;
+            _options = options;
+            _unitOfWork = unitOfWork;
         }
 
         public async Task Handle(UpdateOptionCommand request, CancellationToken ct)
         {
-            var option = await _context.Options
-                .Include(o => o.OptionValues)
-                .FirstOrDefaultAsync(o => o.Id == request.Id, ct);
-            if (option == null) throw new NotFoundException("Option for update not found from provided ID");
+            var option = await _options.GetByIdAsync(request.Id, ct);
+            if (option == null) throw new NotFoundException("Option for update not found");
 
-            option.Name = request.Name ?? option.Name;
-            
-            option.OptionValues.RemoveAll(existing => !request.OptionValues.Any(_request => _request.Id == existing.Id));
-            option.OptionValues.AddRange(request.OptionValues
-                .Where(_request => !_request.Id.HasValue)
-                .Select(_request => new OptionValue
-                {
-                    Value = _request.Value
-                })
-            );
-            foreach (var existingValue in option.OptionValues)
+            if (request.Name != null) option.Rename(request.Name);
+
+            var requestedIds = request.OptionValues
+                .Where(ov => ov.Id.HasValue)
+                .Select(ov => ov.Id!.Value)
+                .ToHashSet();
+
+            foreach (var existingValue in option.Values.ToList())
             {
-                var requestValue = request.OptionValues
-                    .FirstOrDefault(dto => dto.Id == existingValue.Id);
-
-                if (requestValue != null && requestValue.Value != existingValue.Value)
-                {
-                    existingValue.Value = requestValue.Value;
-                }
+                if (!requestedIds.Contains(existingValue.Id))
+                    option.RemoveValue(existingValue);
             }
 
-            await _context.SaveChangesAsync(ct);
+            foreach (var requestedValue in request.OptionValues)
+            {
+                if (!requestedValue.Id.HasValue)
+                {
+                    option.AddValue(new OptionValue(requestedValue.Value));
+                    continue;
+                }
+
+                option.RenameValue(requestedValue.Id.Value, requestedValue.Value);
+            }
+
+            await _unitOfWork.SaveChangesAsync(ct);
         }
     }
 }

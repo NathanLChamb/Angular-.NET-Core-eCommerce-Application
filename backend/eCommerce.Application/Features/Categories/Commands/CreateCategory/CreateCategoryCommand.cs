@@ -4,7 +4,6 @@ using MediatR;
 namespace eCommerce.Application.Features.Categories.Commands.CreateCategory
 {
     public record CreateCategoryCommand(
-        string Name,
-        string Description
-        ) : IRequest<ReadCategoryDto>;
+        string Name
+        ) : IRequest<CategoryResponse>;
 }

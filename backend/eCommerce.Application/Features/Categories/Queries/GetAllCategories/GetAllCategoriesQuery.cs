@@ -6,5 +6,5 @@ namespace eCommerce.Application.Features.Categories.Queries.GetAllCategories
 {
     public record GetAllCategoriesQuery(
         PaginationParams pageParams
-        ) : IRequest<PagedResult<ReadCategoryDto>>;
+        ) : IRequest<PagedResult<CategoryResponse>>;
 }

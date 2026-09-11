@@ -1,4 +1,4 @@
-﻿using eCommerce.Domain.Product;
+﻿using eCommerce.Domain.Catalog.Products;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

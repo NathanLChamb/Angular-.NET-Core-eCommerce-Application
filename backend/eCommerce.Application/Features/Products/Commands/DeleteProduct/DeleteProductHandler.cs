@@ -1,24 +1,28 @@
 ﻿using eCommerce.Application.Exceptions;
 using eCommerce.Application.Interfaces;
+using eCommerce.Application.Interfaces.Repositories;
+using eCommerce.Domain.Catalog.Products;
 using MediatR;
 
 namespace eCommerce.Application.Features.Products.Commands.DeleteProduct
 {
     public class DeleteProductHandler : IRequestHandler<DeleteProductCommand>
     {
-        private readonly IeCommerceContext _context;
-        public DeleteProductHandler(IeCommerceContext context)
+        private readonly IProductRepository _products;
+        private readonly IUnitOfWork _unitOfWork;
+        public DeleteProductHandler(IProductRepository products, IUnitOfWork unitOfWork)
         {
-            _context = context;
+            _products = products;
+            _unitOfWork = unitOfWork;
         }
 
         public async Task Handle(DeleteProductCommand request, CancellationToken ct)
         {
-            var product = await _context.Products.FindAsync(request.Id);
+            var product = await _products.GetByIdAsync(request.Id, ct);
             if (product == null) throw new NotFoundException("Product for deletion not found from provided ID");
 
-            _context.Products.Remove(product);
-            await _context.SaveChangesAsync(ct);
+            _products.Remove(product);
+            await _unitOfWork.SaveChangesAsync(ct);
         }
     }
 }

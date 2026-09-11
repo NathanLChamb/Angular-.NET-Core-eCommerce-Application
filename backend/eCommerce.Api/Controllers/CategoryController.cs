@@ -9,7 +9,6 @@ using eCommerce.Application.Shared;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace eCommerce.Api.Controllers
 {
@@ -24,30 +23,30 @@ namespace eCommerce.Api.Controllers
         }
         [AllowAnonymous]
         [HttpGet]
-        public async Task<ActionResult<PagedResult<ReadCategoryDto>>> GetAllCategories([FromQuery]PaginationParams pageParams)
+        public async Task<ActionResult<PagedResult<CategoryResponse>>> GetAllCategories([FromQuery]PaginationParams pageParams)
         {
             var categories = await _mediator.Send(new GetAllCategoriesQuery(pageParams));
             return Ok(categories);
         }
         [AllowAnonymous]
         [HttpGet("{id}")]
-        public async Task<ActionResult<ReadCategoryDto?>> GetCategoryById(int id)
+        public async Task<ActionResult<CategoryResponse?>> GetCategoryToEdit(int id)
         {
-            var category = await _mediator.Send(new GetCategoryByIdQuery(id));
+            var category = await _mediator.Send(new GetCategoryToEditQuery(id));
             return Ok(category);
         }
         [Authorize(Roles = Roles.Admin)]
         [HttpPost]
-        public async Task<ActionResult<ReadCategoryDto>> CreateCategory([FromBody]CreateCategoryDto dto)
+        public async Task<ActionResult<CategoryResponse>> CreateCategory([FromBody]CreateCategoryRequest request)
         {
-            var category = await _mediator.Send(new CreateCategoryCommand(dto.Name, dto.Description));
-            return CreatedAtAction(nameof(GetCategoryById), new { id = category.Id }, category);
+            var category = await _mediator.Send(new CreateCategoryCommand(request.Name));
+            return CreatedAtAction(nameof(GetCategoryToEdit), new { id = category.Id }, category);
         }
         [Authorize(Roles = Roles.Admin)]
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateCategory(int id, UpdateCategoryDto dto)
+        public async Task<IActionResult> UpdateCategory(int id, UpdateCategoryRequest request)
         {
-            await _mediator.Send(new UpdateCategoryCommand(id, dto.Name, dto.Description));
+            await _mediator.Send(new UpdateCategoryCommand(id, request.Name));
             return NoContent();
         }
         [Authorize(Roles = Roles.Admin)]

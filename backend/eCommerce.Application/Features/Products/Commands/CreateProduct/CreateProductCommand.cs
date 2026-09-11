@@ -8,6 +8,6 @@ namespace eCommerce.Application.Features.Products.Commands.CreateProduct
         string Description,
         List<int> CategoryIds,
         List<int> OptionIds,
-        List<CreateProductVariantDto> ProductVariants
-    ) : IRequest<ReadProductDto>;
+        List<CreateProductVariantRequest> ProductVariants
+    ) : IRequest<ProductResponse>;
 }

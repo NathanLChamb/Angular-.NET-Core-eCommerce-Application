@@ -1,6 +1,7 @@
 ﻿using eCommerce.Application.Exceptions;
 using eCommerce.Application.Features.Orders.DTOs;
 using eCommerce.Application.Interfaces;
+using eCommerce.Domain.Catalog.ProductVariants.ProductVariantValueObjects;
 using eCommerce.Domain.Order;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -28,18 +29,47 @@ namespace eCommerce.Application.Features.Orders.Commands.CreateOrder
                 var cart = await _context.Carts
                     .Include(c => c.Items)
                         .ThenInclude(ci => ci.ProductVariant)
-                            .ThenInclude(pv => pv.Product)
                     .FirstOrDefaultAsync(
                         c => c.UserId == request.UserId,
                         ct);
 
-                if (cart == null) throw new NotFoundException("Cart not found.");
-                if (!cart.Items.Any()) throw new BusinessRuleException("Cannot checkout an empty cart.");
+                if (cart == null)
+                    throw new NotFoundException("Cart not found.");
+
+                if (!cart.Items.Any())
+                    throw new BusinessRuleException(
+                        "Cannot checkout an empty cart.");
+
+                var productIds = cart.Items
+                    .Select(item => EF.Property<int>(
+                        item.ProductVariant,
+                        "ProductId"))
+                    .Distinct()
+                    .ToList();
+
+                var products = await _context.Products
+                    .Where(p => productIds.Contains(p.Id))
+                    .ToDictionaryAsync(p => p.Id, ct);
 
                 foreach (var item in cart.Items)
                 {
-                    if (item.Quantity > item.ProductVariant.StockQuantity)
-                        throw new BusinessRuleException($"Insufficient stock for {item.ProductVariant.Sku}.");
+                    var variant = item.ProductVariant;
+
+                    if (item.Quantity > variant.StockQuantity.Value)
+                    {
+                        throw new BusinessRuleException(
+                            $"Insufficient stock for {variant.Sku}.");
+                    }
+
+                    var productId = EF.Property<int>(
+                        variant,
+                        "ProductId");
+
+                    if (!products.ContainsKey(productId))
+                    {
+                        throw new NotFoundException(
+                            $"Product for variant {variant.Sku} was not found.");
+                    }
                 }
 
                 var order = new Order
@@ -55,19 +85,26 @@ namespace eCommerce.Application.Features.Orders.Commands.CreateOrder
                 {
                     var variant = item.ProductVariant;
 
+                    var productId = EF.Property<int>(
+                        variant,
+                        "ProductId");
+
+                    var product = products[productId];
+
                     order.OrderItems.Add(new OrderItem
                     {
                         ProductVariantId = variant.Id,
-                        ProductName = variant.Product.Name,
-                        Sku = variant.Sku,
-                        PriceAtPurchase = variant.Price,
+                        ProductName = product.Name.Value,
+                        Sku = variant.Sku.Value,
+                        PriceAtPurchase = variant.Price.Amount,
                         Quantity = item.Quantity
                     });
 
-                    variant.StockQuantity -= item.Quantity;
+                    variant.DecreaseStock(new StockQuantity(item.Quantity));
                 }
 
-                order.TotalPrice = order.OrderItems.Sum(i => i.PriceAtPurchase * i.Quantity);
+                order.TotalPrice = order.OrderItems
+                    .Sum(i => i.PriceAtPurchase * i.Quantity);
 
                 _context.Orders.Add(order);
 
@@ -75,6 +112,7 @@ namespace eCommerce.Application.Features.Orders.Commands.CreateOrder
                 cart.UpdatedAt = DateTime.UtcNow;
 
                 await _context.SaveChangesAsync(ct);
+
                 await _transaction.CommitTransactionAsync(ct);
 
                 return new ReadOrderDto
@@ -85,21 +123,27 @@ namespace eCommerce.Application.Features.Orders.Commands.CreateOrder
                     TotalPrice = order.TotalPrice,
                     Status = order.Status.ToString(),
                     OrderDate = order.OrderDate,
-                    Items = order.OrderItems.Select(i => new ReadOrderItemDto
-                    {
-                        Id = i.Id,
-                        ProductName = i.ProductName,
-                        Sku = i.Sku,
-                        PriceAtPurchase = i.PriceAtPurchase,
-                        Quantity = i.Quantity,
-                        TotalPrice = i.PriceAtPurchase * i.Quantity
-                    }).ToList()
+
+                    Items = order.OrderItems
+                        .Select(i => new ReadOrderItemDto
+                        {
+                            Id = i.Id,
+                            ProductName = i.ProductName,
+                            Sku = i.Sku,
+                            PriceAtPurchase = i.PriceAtPurchase,
+                            Quantity = i.Quantity,
+                            TotalPrice =
+                                i.PriceAtPurchase * i.Quantity
+                        })
+                        .ToList()
                 };
             }
             catch (DbUpdateConcurrencyException)
             {
                 await _transaction.RollbackTransactionAsync(ct);
-                throw new ConflictException("The stock changed while processing your order. Please try again.");
+
+                throw new ConflictException(
+                    "The stock changed while processing your order. Please try again.");
             }
             catch
             {
@@ -107,6 +151,7 @@ namespace eCommerce.Application.Features.Orders.Commands.CreateOrder
                 throw;
             }
         }
+
         private static string GenerateOrderNumber()
         {
             return $"ORD-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid()

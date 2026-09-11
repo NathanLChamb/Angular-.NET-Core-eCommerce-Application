@@ -1,4 +1,4 @@
-﻿using eCommerce.Domain.Product;
+﻿using eCommerce.Domain.Catalog.ProductVariants;
 
 namespace eCommerce.Domain.Cart
 {

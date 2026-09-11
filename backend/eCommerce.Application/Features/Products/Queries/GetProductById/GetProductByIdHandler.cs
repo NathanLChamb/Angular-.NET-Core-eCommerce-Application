@@ -1,30 +1,29 @@
 ﻿using eCommerce.Application.Exceptions;
 using eCommerce.Application.Features.Products.DTOs;
-using eCommerce.Application.Features.Products.Mappings;
-using eCommerce.Application.Interfaces;
+using eCommerce.Application.Interfaces.Queries;
+using eCommerce.Application.Interfaces.Repositories;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace eCommerce.Application.Features.Products.Queries.GetProductById
 {
-    public class GetProductByIdHandler : IRequestHandler<GetProductByIdQuery, ReadProductDto>
+    public class GetProductByIdHandler : IRequestHandler<GetProductByIdQuery, ProductResponse>
     {
-        private readonly IeCommerceContext _context;
-        public GetProductByIdHandler(IeCommerceContext context)
+        private readonly IProductRepository _products;
+        private readonly IProductQueries _queries;
+        public GetProductByIdHandler(IProductRepository products, IProductQueries queries)
         {
-            _context = context;
+            _products = products;
+            _queries = queries;
         }
 
-        public async Task<ReadProductDto> Handle(GetProductByIdQuery request, CancellationToken ct)
+        public async Task<ProductResponse> Handle(GetProductByIdQuery request, CancellationToken ct)
         {
-            var product = await _context.Products
-                .AsNoTracking()
-                .Where(p => p.Id == request.Id)
-                .ToProductDto()
-                .FirstOrDefaultAsync(ct);
+            var product = await _products.GetByIdAsync(request.Id, ct);
             if (product == null) throw new NotFoundException("Product not found from provided ID");
 
-            return product;
+
+            return await _queries.GetByIdAsync(product.Id, ct) ?? throw new NotFoundException(
+                "Product could not be retrieved after saving");
         }
     }
 }

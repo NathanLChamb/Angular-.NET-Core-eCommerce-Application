@@ -1,7 +1,5 @@
 using eCommerce.Api.Middleware;
 using eCommerce.Application;
-using eCommerce.Application.Features.Products.Interfaces;
-using eCommerce.Application.Features.Products.Services;
 using eCommerce.Application.Interfaces;
 using eCommerce.Infrastructure.Identity;
 using eCommerce.Infrastructure.Persistence;
@@ -24,7 +22,6 @@ builder.Services.AddCors(options =>
     });
 });
 
-builder.Services.AddScoped<IProductValidationService, ProductValidationService>();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddApplication();
 

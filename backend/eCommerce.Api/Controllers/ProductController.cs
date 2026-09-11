@@ -31,28 +31,28 @@ namespace eCommerce.Api.Controllers
         }
         [AllowAnonymous]
         [HttpGet]
-        public async Task<ActionResult<PagedResult<ReadProductDto>>> GetAllProducts([FromQuery] ProductSearchFilter filter)
+        public async Task<ActionResult<PagedResult<ProductResponse>>> GetAllProducts([FromQuery] ProductSearchFilter filter)
         {
             var products = await _mediator.Send(new GetAllProductsQuery(filter));
             return Ok(products);
         }
         [AllowAnonymous]
         [HttpGet("{id}")]
-        public async Task<ActionResult<ReadProductDto?>> GetProductById(int id)
+        public async Task<ActionResult<ProductResponse?>> GetProductById(int id)
         {
             var product = await _mediator.Send(new GetProductByIdQuery(id));
             return Ok(product);
         }
         [Authorize(Roles = Roles.Admin)]
         [HttpPost]
-        public async Task<ActionResult<ReadProductDto>> CreateProduct([FromBody] CreateProductDto dto)
+        public async Task<ActionResult<ProductResponse>> CreateProduct([FromBody] CreateProductRequest dto)
         {
             var product = await _mediator.Send(new CreateProductCommand(dto.Name, dto.Description, dto.CategoryIds, dto.OptionIds, dto.ProductVariants));
             return CreatedAtAction(nameof(GetProductById), new { id = product.Id }, product);
         }
         [Authorize(Roles = Roles.Admin)]
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateProduct(int id, UpdateProductDto dto)
+        public async Task<IActionResult> UpdateProduct(int id, UpdateProductRequest dto)
         {
             await _mediator.Send(new UpdateProductCommand(id, dto.Name, dto.Description, dto.CategoryIds, dto.OptionIds, dto.ProductVariants));
             return NoContent();

@@ -1,7 +1,7 @@
 ﻿using eCommerce.Application.Exceptions;
 using eCommerce.Application.Features.Products.Images.DTOs;
 using eCommerce.Application.Interfaces;
-using eCommerce.Domain.Product;
+using eCommerce.Domain.Catalog.Products;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -26,10 +26,12 @@ namespace eCommerce.Application.Features.Products.Images.Commands.UpdateProductO
                 .ToList();
 
             if (optionValueIds.Count == 0) throw new ValidationRuleException("At least one option value is required.");
-            
-            var validOptionValueIds = await _context.OptionValues
-                .Where(ov => optionValueIds.Contains(ov.Id) && _context.ProductOptions
-                    .Any(po => po.ProductId == request.ProductId && po.OptionId == ov.OptionId))
+
+            var validOptionValueIds = await _context.Products
+                .Where(p => p.Id == request.ProductId)
+                    .SelectMany(p => p.Options)
+                    .SelectMany(o => o.Values)
+                .Where(ov => optionValueIds.Contains(ov.Id))
                 .Select(ov => ov.Id)
                 .ToListAsync(ct);
             if (validOptionValueIds.Count != optionValueIds.Count) throw new NotFoundException("One or more option values do not belong to this product.");
