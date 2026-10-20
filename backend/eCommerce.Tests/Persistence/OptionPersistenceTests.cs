@@ -5,13 +5,9 @@ using Microsoft.EntityFrameworkCore;
 namespace eCommerce.Tests.Persistence
 {
     [Collection("Database Collection")]
-    public class OptionPersistenceTests
+    public class OptionPersistenceTests(PostgresContainerFixture fixture)
     {
-        private readonly PostgresContainerFixture _fixture;
-        public OptionPersistenceTests(PostgresContainerFixture fixture)
-        {
-            _fixture = fixture;
-        }
+        private readonly PostgresContainerFixture _fixture = fixture;
 
         [Fact]
         public async Task Option_WithValues_PersistsAndReloadsRelationship()

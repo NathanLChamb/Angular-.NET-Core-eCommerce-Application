@@ -4,6 +4,7 @@ using eCommerce.Domain.Catalog.Products;
 using eCommerce.Domain.Catalog.Products.ProductValueObjects;
 using eCommerce.Domain.Catalog.ProductVariants;
 using eCommerce.Domain.Catalog.ProductVariants.ProductVariantValueObjects;
+using eCommerce.Domain.Catalog.ProductVariants.ValueObjects;
 using eCommerce.Tests.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,13 +14,33 @@ namespace eCommerce.Tests.Persistence
     public class ProductPersistenceTests(
         PostgresContainerFixture fixture)
     {
-        private readonly PostgresContainerFixture _fixture = fixture;  
+        private readonly PostgresContainerFixture _fixture = fixture;
 
         [Fact]
         public async Task DifferentProducts_CanHaveSameSku()
         {
             await _fixture.ResetDatabase();
             await using var context = _fixture.CreateDbContext();
+
+            var option = new Option("test");
+            var optionValue = new OptionValue("value");
+            option.AddValue(optionValue);
+
+            var product1 = new Product(new Name("Product One"));
+            product1.AddOption(option);
+
+            var product2 = new Product(new Name("Product Two"));
+            product2.AddOption(option);
+
+            product1.AddVariant(new ProductVariant(new Sku("TEST-001"), new Price(0.01m), new StockQuantity(1), [optionValue]));
+
+            product2.AddVariant(new ProductVariant(new Sku("TEST-001"), new Price(0.01m), new StockQuantity(1), [optionValue]));
+
+            context.Products.AddRange(product1, product2);
+
+            await context.SaveChangesAsync();
+
+            Assert.Equal(2, await context.ProductVariants.CountAsync());
         }
 
         [Fact]
@@ -28,8 +49,7 @@ namespace eCommerce.Tests.Persistence
             await _fixture.ResetDatabase();
             await using var context = _fixture.CreateDbContext();
 
-            var product = new Product(
-                new Name("Test Product"));
+            var product = new Product(new Name("Test Product"));
 
             var category = new Category("Electronics");
 
@@ -193,18 +213,71 @@ namespace eCommerce.Tests.Persistence
         {
             await _fixture.ResetDatabase();
             await using var context = _fixture.CreateDbContext();
+
+            var option = new Option("test");
+            var optionValue = new OptionValue("value");
+            option.AddValue(optionValue);
+
+            var product = new Product(new Name("Test TV"));
+            product.AddOption(option);
+
+            var variant = new ProductVariant(new Sku("TEST-TV-REMOTE"), new Price(0.01m), new StockQuantity(1), [optionValue]);
+
+            product.AddVariant(variant);
+
+            context.Products.Add(product);
+
+            await context.SaveChangesAsync();
+
+            context.ChangeTracker.Clear();
+
+            var result = await context.Products
+                .Include(p => p.Variants)
+                .SingleAsync(p => p.Id == product.Id);
+
+            Assert.Single(result.Variants);
+            Assert.Equal("TEST-TV-REMOTE", result.Variants.First().Sku.Value);
         }
 
         [Fact]
         public void AddVariant_WhenOptionValueDoesNotBelongToProductOption_ThrowsInvalidOperationException()
         {
+            var product = new Product(new Name("Test Shirt"));
 
+            var color = new Option("Color");
+            var size = new Option("Size");
+
+            var red = new OptionValue("Red");
+            var large = new OptionValue("Large");
+
+            color.AddValue(red);
+            size.AddValue(large);
+
+            product.AddOption(color);
+
+            var variant = new ProductVariant(new Sku("SHIRT-RED"), new Price(0.01m), new StockQuantity(1), [large]);
+
+            Assert.Throws<InvalidOperationException>(
+                () => product.AddVariant(variant));
         }
 
         [Fact]
         public void AddVariant_WhenOptionValueBelongsToProductOption_AddsVariant()
         {
-            
+            var product = new Product(
+                new Name("Test Shirt"));
+
+            var color = new Option("Color");
+            var red = new OptionValue("Red");
+
+            color.AddValue(red);
+            product.AddOption(color);
+
+            var variant = new ProductVariant(new Sku("SHIRT-RED"), new Price(0.01m), new StockQuantity(1), [red]);
+
+            product.AddVariant(variant);
+
+            Assert.Contains(variant, product.Variants);
         }
 
         [Fact]
@@ -212,6 +285,34 @@ namespace eCommerce.Tests.Persistence
         {
             await _fixture.ResetDatabase();
             await using var context = _fixture.CreateDbContext();
+
+            var option = new Option("test");
+            var optionValue = new OptionValue("value");
+            option.AddValue(optionValue);
+
+            var product = new Product(
+                new Name("Test Product"));
+
+            product.AddOption(option);
+
+            var variant = new ProductVariant(new Sku("TEST-PRODUCT-001"), new Price(0.01m), new StockQuantity(1), [optionValue]);
+
+            product.AddVariant(variant);
+
+            context.Products.Add(product);
+
+            await context.SaveChangesAsync();
+
+            context.Products.Remove(product);
+
+            await context.SaveChangesAsync();
+
+            context.ChangeTracker.Clear();
+
+            var variantExists = await context.ProductVariants
+                .AnyAsync(v => v.Id == variant.Id);
+
+            Assert.False(variantExists);
         }
     }
 }

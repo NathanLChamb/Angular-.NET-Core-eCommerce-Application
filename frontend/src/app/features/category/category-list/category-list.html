@@ -10,7 +10,6 @@
             <tr>
                 <th id="hdr_id" scope="col">ID</th>
                 <th id="hdr_name" scope="col">Name</th>
-                <th id="hdr_desc" scope="col">Description</th>
                 <th id="hdr_actions" scope="col">Actions</th>
             </tr>
         </thead>
@@ -28,7 +27,6 @@
                     <tr>
                         <td headers="hdr_id">{{category.id}}</td>
                         <td headers="hdr_name">{{category.name}}</td>
-                        <td headers="hdr_desc">{{category.description}}</td>
                         <td headers="hdr_actions">
                             <button type="button" [routerLink]="['edit', category.id]">Edit</button>
                             <button type="button" (click)="handleDelete(category.id)">Delete</button>

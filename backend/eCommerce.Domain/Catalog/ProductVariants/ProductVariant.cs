@@ -16,7 +16,7 @@ namespace eCommerce.Domain.Catalog.ProductVariants
         public IReadOnlyCollection<OptionValue> OptionValues => _optionValues;
         public IReadOnlyList<Picture> Pictures => _pictures;
         public ProductVariant(Sku sku, Price price, StockQuantity stockQuantity,
-            IEnumerable<OptionValue> optionValues, IEnumerable<Picture> pictures)
+            IEnumerable<OptionValue> optionValues, IEnumerable<Picture>? pictures = null)
         {
             Sku = sku;
             Price = price;
@@ -27,7 +27,7 @@ namespace eCommerce.Domain.Catalog.ProductVariants
                 AddOptionValue(optionValue);
             }
 
-            _pictures.AddRange(pictures);
+            _pictures.AddRange(pictures ?? []);
         }
         private ProductVariant() { }
 
