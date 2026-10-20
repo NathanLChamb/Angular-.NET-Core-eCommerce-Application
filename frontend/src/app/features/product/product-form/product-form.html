@@ -48,6 +48,23 @@
               </div>
             }
           </div>
+
+          <div id="optionValues">
+            <h3>Option Values</h3>
+            @for (option of selectedOptions(); track option.id) {
+              <div>
+                {{option.name}}
+                @for (value of option.optionValues; track value.id) {
+                  <label>
+                    <input type="checkbox" [checked]="selectedOptionValueIds().includes(value.id)"
+                      (change)="toggleOptionValue(value.id)"/>
+                    {{ value.value }}
+                  </label>
+                }
+                
+              </div>
+            }
+          </div>
         </section>
 
         <section class="description-container">
@@ -69,43 +86,82 @@
     </section>
 
     <section id="derived">
-      <fieldset>
-        <legend>Variants</legend>
-        <div id="productVariants" formArrayName="productVariants">
-          @for (variant of productVariants.controls; track $index; let i = $index) {
-            <div [formGroupName]="i" class="variant-card">
-              <h4>Variant {{ i + 1 }}</h4>
-              <div>
-                <strong>Combination:</strong>
-                @for (optionValueId of variant.controls.optionValueIds.value; track $index) {
-                  {{ optionValueMap().get(optionValueId) }} @if (!$last) { / }
+  <fieldset>
+    <legend>Variants</legend>
+
+    <div id="productVariants" formArrayName="productVariants">
+      @for (variant of productVariants.controls; track $index; let i = $index) {
+        <div [formGroupName]="i" class="variant-card">
+          <h4>Variant {{ i + 1 }}</h4>
+
+          <div>
+            <strong>Combination:</strong>
+            @for (optionValueId of variant.controls.optionValueIds.value; track $index) {
+              {{ optionValueMap().get(optionValueId) }}
+              @if (!$last) { / }
+            }
+          </div>
+
+          <div>
+            <label [for]="'sku-' + i">SKU</label>
+            <input [id]="'sku-' + i" formControlName="sku" />
+          </div>
+
+          <div>
+            <label [for]="'price-' + i">Price</label>
+            <input
+              type="number"
+              [id]="'price-' + i"
+              formControlName="price"
+            />
+          </div>
+
+          <div>
+            <label [for]="'stock-' + i">Stock Quantity</label>
+            <input
+              type="number"
+              [id]="'stock-' + i"
+              formControlName="stockQuantity"
+            />
+          </div>
+
+          <div formArrayName="pictures">
+            <h4>Pictures</h4>
+
+            @for (picture of variant.controls.pictures.controls; track $index; let j = $index) {
+              <div [formGroupName]="j">
+                <input formControlName="role" placeholder="Role" />
+
+                <input
+                  formControlName="location"
+                  placeholder="https://..."
+                />
+
+                @if (picture.controls.location.value) {
+                  <img
+                    [src]="picture.controls.location.value"
+                    alt="Variant picture"
+                    width="150"
+                  />
                 }
-              </div>
 
-              <div>
-                <label [for]="'sku-' + i">SKU</label>
-                <input [id]="'sku-' + i" formControlName="sku"/>
+                <button
+                  type="button"
+                  (click)="removePicture(variant, j)"
+                >
+                  Remove
+                </button>
               </div>
+            }
 
-              <div>
-                <label [for]="'price-' + i">Price</label>
-                <input type="number" [id]="'price-' + i" formControlName="price"/>
-              </div>
-
-              <div>
-                <label [for]="'stock-' + i">Stock Quantity</label>
-                <input type="number" [id]="'stock-' + i" formControlName="stockQuantity"/>
-              </div>
-            </div>
-          }
+            <button type="button" (click)="addPicture(variant)">
+              Add Picture
+            </button>
+          </div>
         </div>
-      </fieldset>
-    </section>
-
-    @if (product.value(); as currentProduct) {
-      <section class="option-value-images">
-        <app-product-images [product]="currentProduct" (imagesChanged)="product.reload()"></app-product-images>
-      </section>
-    }
+      }
+    </div>
+  </fieldset>
+  </section>
   </div>
 </form>

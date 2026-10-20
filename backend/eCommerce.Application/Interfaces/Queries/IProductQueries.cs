@@ -8,5 +8,6 @@ namespace eCommerce.Application.Interfaces.Queries
     {
         Task<PagedResult<ProductResponse>> GetPagedAsync(ProductSearchFilter filter, CancellationToken ct);
         Task<ProductResponse?> GetByIdAsync(int id, CancellationToken ct);
+        Task<VariantDetailsResponse?> GetVariantDetailsAsync(int productVariantId, CancellationToken ct);
     }
 }

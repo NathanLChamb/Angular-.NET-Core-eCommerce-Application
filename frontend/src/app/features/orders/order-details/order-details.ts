@@ -30,11 +30,11 @@ export class OrderDetails {
 
 
   cancelOrder(id:number) {
-  if (!confirm("Cancel this order?")) {
-    return;
-  }
+    if (!confirm("Cancel this order?")) {
+      return;
+    }
 
-  this.orderService.cancelOrder(id)
-    .subscribe(() => this.order.reload());
-}
+    this.orderService.cancelOrder(id)
+      .subscribe(() => this.order.reload());
+  }
 }

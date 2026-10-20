@@ -2,49 +2,44 @@
 using eCommerce.Application.Features.Cart.DTOs;
 using eCommerce.Application.Interfaces;
 using eCommerce.Application.Interfaces.Queries;
+using eCommerce.Application.Interfaces.Repositories;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace eCommerce.Application.Features.Cart.Commands.ClearCart
 {
-    public class ClearCartHandler : IRequestHandler<ClearCartCommand, ReadCartDto>
+    public class ClearCartHandler(
+        ICartRepository carts, 
+        ICartQueries queries, 
+        ICurrentUser user, 
+        IUnitOfWork unitOfWork) 
+        : IRequestHandler<ClearCartCommand, CartResponse>
     {
-        private readonly IeCommerceContext _context;
-        private readonly ICartQueries _queries;
+        private readonly ICartRepository _carts = carts;
+        private readonly ICartQueries _queries = queries;
+        private readonly ICurrentUser _user = user;
+        private readonly IUnitOfWork _unitOfWork = unitOfWork;
 
-        public ClearCartHandler(IeCommerceContext context, ICartQueries queries)
-        {
-            _context = context;
-            _queries = queries;
-        }
-
-        public async Task<ReadCartDto> Handle(
+        public async Task<CartResponse> Handle(
             ClearCartCommand request,
             CancellationToken ct)
         {
-            var cart = await _context.Carts
-                .Include(c => c.Items)
-                .FirstOrDefaultAsync(c => c.UserId == request.UserId, ct);
+            var cart = await _carts.GetAsync(
+                _user.UserId, 
+                _user.AnonymousId, 
+                ct)
+                ?? throw new NotFoundException(
+                    "Cart not found from provided ID");
 
-            if (cart == null)
-            {
-                throw new NotFoundException("Cart not found.");
-            }
+            cart.Clear();
 
-            cart.Items.Clear();
-            cart.UpdatedAt = DateTime.UtcNow;
+            await _unitOfWork.SaveChangesAsync(ct);
 
-            await _context.SaveChangesAsync(ct);
-
-            var result = await _queries.GetByIdAsync(cart.Id, ct);
-
-            if (result == null)
-            {
-                throw new NotFoundException(
-                    "Cart could not be loaded after updating the item.");
-            }
-
-            return result;
+            return await _queries.GetCartDetailsAsync(
+                _user.UserId, 
+                _user.AnonymousId, 
+                ct)
+                ?? throw new InvalidOperationException(
+                    "Cart not found");
         }
     }
 }

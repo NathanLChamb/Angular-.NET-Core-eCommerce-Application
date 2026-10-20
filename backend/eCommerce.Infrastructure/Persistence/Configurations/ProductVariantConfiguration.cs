@@ -24,7 +24,7 @@ namespace eCommerce.Infrastructure.Persistence.Configurations
             builder.Property(pv => pv.Sku)
                 .HasConversion(
                     sku => sku.Value,
-                    value => new ProductVariantSku(value))
+                    value => new Sku(value))
                 .HasColumnName("Sku")
                 .HasMaxLength(64)
                 .IsRequired();
@@ -61,6 +61,17 @@ namespace eCommerce.Infrastructure.Persistence.Configurations
                     {
                         join.HasKey("ProductVariantId", "OptionValueId");
                     });
+            builder.Navigation(pv => pv.OptionValues)
+                .HasField("_optionValues");
+
+            builder.OwnsMany(
+                pv => pv.Pictures,
+                pictureBuilder =>
+                {
+                    pictureBuilder.ToJson();
+                });
+            builder.Navigation(pv => pv.Pictures)
+                .HasField("_pictures");
         }
     }
 }

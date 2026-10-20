@@ -2,13 +2,12 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { ProductService } from '../product-service';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
-import { DatePipe } from '@angular/common';
 import { ProductSearchFilter, ProductSort } from '../models';
 
 
 @Component({
   selector: 'app-product-list',
-  imports: [RouterLink, DatePipe],
+  imports: [RouterLink],
   templateUrl: './product-list.html',
   styleUrl: './product-list.css',
 })
@@ -27,7 +26,7 @@ export class ProductList {
 
   protected products = rxResource({
     params: () => this.filter(),
-    stream: ({params}) => this.productService.GetAllProducts(params)
+    stream: ({params}) => this.productService.getAllProducts(params)
   })
 
   protected totalPages = computed(() => {
@@ -80,7 +79,7 @@ export class ProductList {
   }
 
   handleDelete(id: number) {
-    this.productService.DeleteProduct(id).subscribe({
+    this.productService.deleteProduct(id).subscribe({
       next: () => this.products.reload()
     })
   }

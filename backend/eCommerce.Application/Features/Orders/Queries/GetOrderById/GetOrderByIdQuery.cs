@@ -6,5 +6,5 @@ namespace eCommerce.Application.Features.Orders.Queries.GetOrderById
     public record GetOrderByIdQuery(
         int OrderId,
         string UserId
-    ) : IRequest<ReadOrderDto?>;
+    ) : IRequest<OrderResponse?>;
 }

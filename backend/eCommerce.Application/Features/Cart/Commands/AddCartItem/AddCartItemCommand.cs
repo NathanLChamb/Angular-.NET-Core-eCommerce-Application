@@ -7,5 +7,5 @@ namespace eCommerce.Application.Features.Cart.Commands.AddCartItem
         string UserId,
         int ProductVariantId,
         int Quantity
-    ) : IRequest<ReadCartDto>;
+    ) : IRequest<CartResponse>;
 }

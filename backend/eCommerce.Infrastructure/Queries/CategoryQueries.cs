@@ -1,19 +1,20 @@
 ﻿using eCommerce.Application.Features.Categories.DTOs;
 using eCommerce.Application.Interfaces.Queries;
 using eCommerce.Application.Shared;
+using eCommerce.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
-namespace eCommerce.Infrastructure.Persistence.Queries
+namespace eCommerce.Infrastructure.Queries
 {
-    public class CategoryQueries : ICategoryQueries
+    public class CategoryQueries(
+        eCommerceContext context) 
+        : ICategoryQueries
     {
-        private readonly eCommerceContext _context;
-        public CategoryQueries(eCommerceContext context)
-        {
-            _context = context;
-        }
+        private readonly eCommerceContext _context = context;
 
-        public async Task<PagedResult<CategoryResponse>> GetPagedAsync(PaginationParams pageParams, CancellationToken ct)
+        public async Task<PagedResult<CategoryResponse>> GetPagedAsync(
+            PaginationParams pageParams, 
+            CancellationToken ct)
         {
             var query = _context.Categories
                 .AsNoTracking()
@@ -39,7 +40,9 @@ namespace eCommerce.Infrastructure.Persistence.Queries
                 PageSize = pageParams.PageSize
             };
         }
-        public async Task<CategoryResponse?> GetByIdAsync(int id, CancellationToken ct)
+        public async Task<CategoryResponse?> GetByIdAsync(
+            int id, 
+            CancellationToken ct)
         {
             return await _context.Categories
                 .AsNoTracking()
@@ -49,7 +52,7 @@ namespace eCommerce.Infrastructure.Persistence.Queries
                     Id = c.Id,
                     Name = c.Name
                 })
-                .FirstOrDefaultAsync();
+                .FirstOrDefaultAsync(ct);
         }
     }
 }

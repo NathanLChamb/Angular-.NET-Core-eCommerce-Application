@@ -1,25 +1,25 @@
-export interface ReadOptionDto {
+export interface OptionResponse {
     id: number;
     name: string;
-    optionValues: ReadOptionValueDto[];
+    optionValues: OptionValueResponse[];
 }
 
-export interface ReadOptionValueDto {
+export interface OptionValueResponse {
     id: number;
     value: string;
 }
 
-export interface CreateOptionDto {
+export interface CreateOptionRequest {
     name: string;
     optionValues: string[]
 }
 
-export interface UpdateOptionDto {
+export interface UpdateOptionRequest {
     name: string;
-    optionValues: UpdateOptionValueDto[]
+    optionValues: UpdateOptionValueRequest[]
 }
 
-export interface UpdateOptionValueDto {
+export interface UpdateOptionValueRequest {
     id?: number;
     value: string;
 }

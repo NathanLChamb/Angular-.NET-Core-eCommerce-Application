@@ -1,4 +1,4 @@
-﻿using eCommerce.Domain.Cart;
+﻿using eCommerce.Domain.Carts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -10,17 +10,28 @@ namespace eCommerce.Infrastructure.Persistence.Configurations
         {
             builder.HasKey(c => c.Id);
 
-            builder.HasIndex(c => c.UserId)
-                .IsUnique();
-
             builder.Property(c => c.UserId)
-                .IsRequired()
                 .HasMaxLength(450);
 
+            builder.Property(c => c.AnonymousId);
+
+            builder.Property(c => c.CreatedAt)
+                .IsRequired();
+
+            builder.Property(c => c.UpdatedAt);
+
             builder.HasMany(c => c.Items)
-                .WithOne(ci => ci.Cart)
-                .HasForeignKey(ci => ci.CartId)
+                .WithOne()
+                .HasForeignKey("CartId")
                 .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasIndex(c => c.UserId)
+                .IsUnique()
+                .HasFilter("\"UserId\" IS NOT NULL");
+
+            builder.HasIndex(c => c.AnonymousId)
+                .IsUnique()
+                .HasFilter("\"AnonymousId\" IS NOT NULL");
         }
     }
 }

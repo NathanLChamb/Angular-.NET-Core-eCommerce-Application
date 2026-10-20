@@ -3,6 +3,7 @@ using eCommerce.Application.Common.Constants;
 using eCommerce.Application.Features.Orders.Commands.CancelOrder;
 using eCommerce.Application.Features.Orders.Commands.CreateOrder;
 using eCommerce.Application.Features.Orders.Commands.UpdateOrderStatus;
+using eCommerce.Application.Features.Orders.DTOs;
 using eCommerce.Application.Features.Orders.Filters;
 using eCommerce.Application.Features.Orders.Queries.GetAdminOrderById;
 using eCommerce.Application.Features.Orders.Queries.GetAllOrders;
@@ -20,14 +21,12 @@ namespace eCommerce.Api.Controllers;
 [ApiController]
 [Route("api/orders")]
 [Authorize]
-public class OrdersController : ControllerBase
+public class OrdersController(
+    IMediator mediator) 
+    : ControllerBase
 {
-    private readonly IMediator _mediator;
+    private readonly IMediator _mediator = mediator;
     private string UserId => User.FindFirstValue(JwtRegisteredClaimNames.Sub) ?? throw new UnauthorizedAccessException();
-    public OrdersController(IMediator mediator)
-    {
-        _mediator = mediator;
-    }
 
     [HttpPost]
     public async Task<IActionResult> CreateOrder([FromBody] CreateOrderRequest request, CancellationToken ct)
@@ -37,9 +36,9 @@ public class OrdersController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetMyOrders(CancellationToken ct)
+    public async Task<IActionResult> GetMyOrders([FromQuery] OrderSearchFilter filter, CancellationToken ct)
     {
-        var result = await _mediator.Send(new GetMyOrdersQuery(UserId), ct);
+        var result = await _mediator.Send(new GetMyOrdersQuery(UserId, filter), ct);
         return Ok(result);
     }
 
@@ -59,7 +58,7 @@ public class OrdersController : ControllerBase
 
     [Authorize(Roles = Roles.Admin)]
     [HttpGet("admin")]
-    public async Task<ActionResult<PagedResult<ReadOrderFromAdminDto>>> GetAllOrders([FromQuery] OrderSearchFilter filter, CancellationToken ct)
+    public async Task<ActionResult<PagedResult<AdminOrderResponse>>> GetAllOrders([FromQuery] OrderSearchFilter filter, CancellationToken ct)
     {
         var result = await _mediator.Send(new GetAllOrdersQuery(filter), ct);
         return Ok(result);
@@ -75,7 +74,7 @@ public class OrdersController : ControllerBase
 
     [Authorize(Roles = Roles.Admin)]
     [HttpGet("admin/{id:int}")]
-    public async Task<ActionResult<ReadOrderFromAdminDto>> GetAdminOrderById(int id, CancellationToken ct)
+    public async Task<ActionResult<AdminOrderResponse>> GetAdminOrderById(int id, CancellationToken ct)
     {
         var result = await _mediator.Send(new GetAdminOrderByIdQuery(id), ct);
         return Ok(result);

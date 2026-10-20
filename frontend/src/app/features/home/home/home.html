@@ -5,12 +5,10 @@
     @if(products.value(); as result) {
         @for(product of result.items; track product.id) {
             <article class="product-card" [routerLink]="['/product', product.id]">
-                @if (product.productOptionValueImages.find(i => i.isDefault); as image) {
-                    <img [src]="image.url" [alt]="product.name" />
+                @if (getProductImage(product); as picture) {
+                    <img [src]="picture.location" [alt]="picture.role"/>
                 } @else {
-                    <div class="image-placeholder">
-                        No image available
-                    </div>
+                    <div class="image-placeholder">No image available</div>
                 }
                 <p>{{product.productVariants.length - 1}} other
                     @for (option of product.options; track option.id) {
@@ -21,9 +19,12 @@
                 <p>{{product.description}},  
                     @for (option of product.options; track option.id) {
                         {{option.name.toLowerCase()}} @if (!$last) {, }
-                    }   
+                    }
                 </p>
             </article>
         }
     }
 </section>
+<button type="button" (click)="this.previousPage()" [disabled]="this.pageNumber() === 1">Previous</button>
+<span>Page {{this.pageNumber()}} of {{this.totalPages()}}</span>
+<button type="button" (click)="this.nextPage()" [disabled]="this.pageNumber() === this.totalPages()">Next</button>

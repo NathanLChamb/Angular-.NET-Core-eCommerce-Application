@@ -1,153 +1,123 @@
 ﻿using eCommerce.Application.Exceptions;
 using eCommerce.Application.Features.Orders.DTOs;
 using eCommerce.Application.Interfaces;
+using eCommerce.Application.Interfaces.Queries;
+using eCommerce.Application.Interfaces.Repositories;
+using eCommerce.Domain.Carts.ValueObjects;
 using eCommerce.Domain.Catalog.ProductVariants.ProductVariantValueObjects;
+using eCommerce.Domain.Catalog.ProductVariants.ValueObjects;
 using eCommerce.Domain.Order;
+using eCommerce.Domain.Order.ValueObjects;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace eCommerce.Application.Features.Orders.Commands.CreateOrder
 {
-    public class CreateOrderHandler : IRequestHandler<CreateOrderCommand, ReadOrderDto>
+    public class CreateOrderHandler(
+        IOrderRepository orders,
+        IOrderQueries queries,
+        ICartRepository carts,
+        IProductRepository products,
+        ICurrentUser user,
+        IUnitOfWork unitOfWork,
+        ITransactionManager transaction) 
+        : IRequestHandler<CreateOrderCommand, OrderResponse>
     {
-        private readonly IeCommerceContext _context;
-        private readonly ITransactionManager _transaction;
+        private readonly IOrderRepository _orders = orders;
+        private readonly IOrderQueries _queries = queries;
+        private readonly ICartRepository _carts = carts;
+        private readonly IProductRepository _products = products;
+        private readonly ICurrentUser _user = user;
+        private readonly IUnitOfWork _unitOfWork = unitOfWork;
+        private readonly ITransactionManager _transaction = transaction;
 
-        public CreateOrderHandler(IeCommerceContext context, ITransactionManager transaction)
+        public async Task<OrderResponse> Handle(
+            CreateOrderCommand request, 
+            CancellationToken ct)
         {
-            _context = context;
-            _transaction = transaction;
-        }
+            ValidateCurrentUser();
 
-
-        public async Task<ReadOrderDto> Handle(CreateOrderCommand request, CancellationToken ct)
-        {
             await _transaction.BeginTransactionAsync(ct);
 
             try
             {
-                var cart = await _context.Carts
-                    .Include(c => c.Items)
-                        .ThenInclude(ci => ci.ProductVariant)
-                    .FirstOrDefaultAsync(
-                        c => c.UserId == request.UserId,
-                        ct);
+                var cart = await _carts.GetAsync(_user.UserId, _user.AnonymousId, ct)
+                    ?? throw new NotFoundException(
+                        "Cart not found.");
 
-                if (cart == null)
-                    throw new NotFoundException("Cart not found.");
+                if (cart.Items.Count == 0) throw new BusinessRuleException(
+                    "Cannot checkout an empty cart.");
 
-                if (!cart.Items.Any())
-                    throw new BusinessRuleException(
-                        "Cannot checkout an empty cart.");
-
-                var productIds = cart.Items
-                    .Select(item => EF.Property<int>(
-                        item.ProductVariant,
-                        "ProductId"))
+                var variantIds = cart.Items
+                    .Select(i => i.ProductVariantId)
                     .Distinct()
-                    .ToList();
+                    .ToArray();
 
-                var products = await _context.Products
-                    .Where(p => productIds.Contains(p.Id))
-                    .ToDictionaryAsync(p => p.Id, ct);
+                var products = await _products.GetByVariantIdsAsync(variantIds, ct);
 
-                foreach (var item in cart.Items)
-                {
-                    var variant = item.ProductVariant;
+                var variantsById = products
+                    .SelectMany(p => p.Variants)
+                    .Where(v => variantIds.Contains(v.Id))
+                    .ToDictionary(v => v.Id);
 
-                    if (item.Quantity > variant.StockQuantity.Value)
+                var productByVariantId = products
+                    .SelectMany(p => p.Variants.Select(v => new
                     {
-                        throw new BusinessRuleException(
-                            $"Insufficient stock for {variant.Sku}.");
-                    }
+                        VariantId = v.Id,
+                        Product = p
+                    }))
+                    .Where(x => variantIds.Contains(x.VariantId))
+                    .ToDictionary(x => x.VariantId, x => x.Product);
 
-                    var productId = EF.Property<int>(
-                        variant,
-                        "ProductId");
+                var orderItems = new List<OrderItemData>();
 
-                    if (!products.ContainsKey(productId))
+                foreach (var cartItem in cart.Items)
+                {
+                    if (!variantsById.TryGetValue(cartItem.ProductVariantId, out var variant) ||
+                        !productByVariantId.TryGetValue(cartItem.ProductVariantId, out var product))
                     {
                         throw new NotFoundException(
-                            $"Product for variant {variant.Sku} was not found.");
+                            $"Product variant {cartItem.ProductVariantId} was not found.");
                     }
-                }
 
-                var order = new Order
-                {
-                    UserId = request.UserId,
-                    OrderNumber = GenerateOrderNumber(),
-                    ShippingAddress = request.ShippingAddress,
-                    Status = OrderStatus.Pending,
-                    OrderDate = DateTime.UtcNow
-                };
-
-                foreach (var item in cart.Items)
-                {
-                    var variant = item.ProductVariant;
-
-                    var productId = EF.Property<int>(
-                        variant,
-                        "ProductId");
-
-                    var product = products[productId];
-
-                    order.OrderItems.Add(new OrderItem
+                    if (variant.StockQuantity.Value < cartItem.Quantity)
                     {
-                        ProductVariantId = variant.Id,
-                        ProductName = product.Name.Value,
-                        Sku = variant.Sku.Value,
-                        PriceAtPurchase = variant.Price.Amount,
-                        Quantity = item.Quantity
-                    });
+                        throw new BusinessRuleException(
+                            $"Insufficient stock for {variant.Sku.Value}.");
+                    }
 
-                    variant.DecreaseStock(new StockQuantity(item.Quantity));
+                    var imageUrl = variant.Pictures.Count > 0
+                        ? variant.Pictures[0].Location.ToString()
+                        : null;
+                    var snapshot = new ProductSnapshot(product.Name.Value, variant.Sku.Value, imageUrl);
+                    orderItems.Add(new OrderItemData(variant.Id, snapshot,
+                        new Price(variant.Price.Amount), cartItem.Quantity));
                 }
 
-                order.TotalPrice = order.OrderItems
-                    .Sum(i => i.PriceAtPurchase * i.Quantity);
+                var order = Order.Create(_user.UserId, _user.AnonymousId,
+                    new OrderNumber(GenerateOrderNumber()), new ShippingAddress(request.ShippingAddress), orderItems);
 
-                _context.Orders.Add(order);
+                foreach (var cartItem in cart.Items)
+                {
+                    var variant = variantsById[cartItem.ProductVariantId];
 
-                cart.Items.Clear();
-                cart.UpdatedAt = DateTime.UtcNow;
+                    variant.DecreaseStock(new StockQuantity(cartItem.Quantity));
+                }
 
-                await _context.SaveChangesAsync(ct);
+                await _orders.AddAsync(order, ct);
+
+                cart.Clear();
+
+                await _unitOfWork.SaveChangesAsync(ct);
 
                 await _transaction.CommitTransactionAsync(ct);
 
-                return new ReadOrderDto
-                {
-                    Id = order.Id,
-                    OrderNumber = order.OrderNumber,
-                    ShippingAddress = order.ShippingAddress,
-                    TotalPrice = order.TotalPrice,
-                    Status = order.Status.ToString(),
-                    OrderDate = order.OrderDate,
-
-                    Items = order.OrderItems
-                        .Select(i => new ReadOrderItemDto
-                        {
-                            Id = i.Id,
-                            ProductName = i.ProductName,
-                            Sku = i.Sku,
-                            PriceAtPurchase = i.PriceAtPurchase,
-                            Quantity = i.Quantity,
-                            TotalPrice =
-                                i.PriceAtPurchase * i.Quantity
-                        })
-                        .ToList()
-                };
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                await _transaction.RollbackTransactionAsync(ct);
-
-                throw new ConflictException(
-                    "The stock changed while processing your order. Please try again.");
+                return await _queries.GetByIdAsync(order.Id, _user.UserId, _user.AnonymousId, ct)
+                    ?? throw new InvalidOperationException(
+                        "The order was saved but could not be retrieved.");
             }
             catch
             {
-                await _transaction.RollbackTransactionAsync(ct);
+                await _transaction.RollbackTransactionAsync(CancellationToken.None);
                 throw;
             }
         }
@@ -157,6 +127,16 @@ namespace eCommerce.Application.Features.Orders.Commands.CreateOrder
             return $"ORD-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid()
                 .ToString()[..8]
                 .ToUpper()}";
+        }
+        private void ValidateCurrentUser()
+        {
+            if (string.IsNullOrWhiteSpace(_user.UserId) && _user.AnonymousId is null)
+                throw new BusinessRuleException(
+                    "A user or anonymous session is required.");
+
+            if (!string.IsNullOrWhiteSpace(_user.UserId) && _user.AnonymousId is not null)
+                throw new BusinessRuleException(
+                    "An order cannot belong to both a user and an anonymous session.");
         }
     }
 }

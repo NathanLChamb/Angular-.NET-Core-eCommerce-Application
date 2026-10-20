@@ -1,4 +1,5 @@
-﻿using eCommerce.Domain.Cart;
+﻿using eCommerce.Domain.Carts;
+using eCommerce.Domain.Catalog.ProductVariants;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -8,26 +9,52 @@ namespace eCommerce.Infrastructure.Persistence.Configurations
     {
         public void Configure(EntityTypeBuilder<CartItem> builder)
         {
-            builder.HasKey(ci => ci.Id);
+            builder.HasKey(i => i.Id);
 
-            builder.HasIndex(ci => new
-            {
-                ci.CartId,
-                ci.ProductVariantId
-            })
-            .IsUnique();
+            builder.Property<int>("CartId");
+            builder.HasIndex("CartId", nameof(CartItem.ProductVariantId))
+                .IsUnique();
 
-            builder.Property(ci => ci.Quantity)
+            builder.Property(i => i.ProductVariantId)
                 .IsRequired();
 
-            builder.HasOne(ci => ci.Cart)
-                .WithMany(c => c.Items)
-                .HasForeignKey(ci => ci.CartId)
-                .OnDelete(DeleteBehavior.Cascade);
+            builder.OwnsOne(i => i.Product, product =>
+            {
+                product.Property(p => p.ProductName)
+                    .HasColumnName("ProductName")
+                    .IsRequired();
 
-            builder.HasOne(ci => ci.ProductVariant)
+                product.Property(p => p.Sku)
+                    .HasColumnName("Sku")
+                    .IsRequired();
+
+                product.Property(p => p.Image)
+                    .HasColumnName("ProductImage")
+                    .HasConversion(
+                        image => image == null
+                            ? null
+                            : image.ToString(),
+                        value => value == null
+                            ? null
+                            : new Uri(value, UriKind.Absolute));
+            });
+
+            builder.Property(i => i.Quantity)
+                .IsRequired();
+
+            builder.OwnsOne(pv => pv.UnitPrice, price =>
+            {
+                price.Property(p => p.Amount)
+                    .HasColumnName("UnitPrice")
+                    .HasPrecision(18, 2)
+                    .IsRequired();
+            });
+
+            builder.Ignore(i => i.TotalPrice);
+
+            builder.HasOne<ProductVariant>()
                 .WithMany()
-                .HasForeignKey(ci => ci.ProductVariantId)
+                .HasForeignKey(i => i.ProductVariantId)
                 .OnDelete(DeleteBehavior.Restrict);
         }
     }

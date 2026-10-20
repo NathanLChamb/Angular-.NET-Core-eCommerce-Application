@@ -3,77 +3,76 @@ using eCommerce.Application.Exceptions;
 using eCommerce.Application.Features.Auth.Models;
 using Microsoft.AspNetCore.Identity;
 
-namespace eCommerce.Infrastructure.Identity;
-
-public class IdentityService : IIdentityService
+namespace eCommerce.Infrastructure.Identity
 {
-    private readonly UserManager<ApplicationUser> _userManager;
-
-    public IdentityService(UserManager<ApplicationUser> userManager)
+    public class IdentityService(
+        UserManager<ApplicationUser> userManager)
+        : IIdentityService
     {
-        _userManager = userManager;
-    }
-    public async Task<TokenUser?> LoginAsync(string email, string password)
-    {
-        email = email.Trim().ToLowerInvariant();
+        private readonly UserManager<ApplicationUser> _userManager = userManager;
 
-        var user = await _userManager.FindByEmailAsync(email);
-        if (user == null) return null;
-
-        var validPassword = await _userManager.CheckPasswordAsync(user, password);
-        if (!validPassword) return null;
-
-        var roles = await _userManager.GetRolesAsync(user);
-
-        return new TokenUser
+        public async Task<TokenUser?> LoginAsync(string email, string password)
         {
-            Id = user.Id,
-            Email = user.Email!,
-            DisplayName = user.DisplayName,
-            Roles = roles
-        };
-    }
+            email = email.Trim().ToLowerInvariant();
 
-    public async Task<TokenUser> RegisterAsync(string email, string password, string displayName)
-    {
-        email = email.Trim().ToLowerInvariant();
+            var user = await _userManager.FindByEmailAsync(email);
+            if (user == null) return null;
 
-        var existingUser =  await _userManager.FindByEmailAsync(email);
-        if (existingUser != null)
-        {
-            throw new BusinessRuleException("Email is already registered.");
+            var validPassword = await _userManager.CheckPasswordAsync(user, password);
+            if (!validPassword) return null;
+
+            var roles = await _userManager.GetRolesAsync(user);
+
+            return new TokenUser
+            {
+                Id = user.Id,
+                Email = user.Email!,
+                DisplayName = user.DisplayName,
+                Roles = roles
+            };
         }
 
-        var user = new ApplicationUser
+        public async Task<TokenUser> RegisterAsync(string email, string password, string displayName)
         {
-            UserName = email,
-            Email = email,
-            DisplayName = displayName
-        };
+            email = email.Trim().ToLowerInvariant();
 
-        var createResult = await _userManager.CreateAsync(user, password);
-        if (!createResult.Succeeded)
-        {
-            var errors = string.Join(", ", createResult.Errors.Select(e => e.Description));
-            throw new BusinessRuleException(errors);
+            var existingUser = await _userManager.FindByEmailAsync(email);
+            if (existingUser != null)
+            {
+                throw new BusinessRuleException("Email is already registered.");
+            }
+
+            var user = new ApplicationUser
+            {
+                UserName = email,
+                Email = email,
+                DisplayName = displayName
+            };
+
+            var createResult = await _userManager.CreateAsync(user, password);
+            if (!createResult.Succeeded)
+            {
+                var errors = string.Join(", ", createResult.Errors.Select(e => e.Description));
+                throw new BusinessRuleException(errors);
+            }
+
+            var roleResult = await _userManager.AddToRoleAsync(user, Roles.Customer);
+            if (!roleResult.Succeeded)
+            {
+                await _userManager.DeleteAsync(user);
+                var errors = string.Join(", ", roleResult.Errors.Select(e => e.Description));
+                throw new BusinessRuleException($"Failed assigning customer role: {errors}");
+            }
+
+            var roles = await _userManager.GetRolesAsync(user);
+
+            return new TokenUser
+            {
+                Id = user.Id,
+                Email = user.Email!,
+                DisplayName = user.DisplayName,
+                Roles = roles
+            };
         }
-
-        var roleResult = await _userManager.AddToRoleAsync(user, Roles.Customer);
-        if (!roleResult.Succeeded)
-        {
-            await _userManager.DeleteAsync(user);
-            var errors = string.Join(", ", roleResult.Errors.Select(e => e.Description));
-            throw new BusinessRuleException($"Failed assigning customer role: {errors}");
-        }
-
-        var roles = await _userManager.GetRolesAsync(user);
-
-        return new TokenUser
-        {
-            Id = user.Id,
-            Email = user.Email!,
-            DisplayName = user.DisplayName,
-            Roles = roles
-        };
     }
 }

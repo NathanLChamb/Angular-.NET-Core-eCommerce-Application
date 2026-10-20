@@ -1,40 +1,74 @@
 ﻿using eCommerce.Application.Exceptions;
-using eCommerce.Application.Features.Orders.Commands.UpdateOrderStatus;
 using eCommerce.Application.Features.Orders.DTOs;
-using eCommerce.Application.Features.Orders.Mappings;
 using eCommerce.Application.Interfaces;
+using eCommerce.Application.Interfaces.Queries;
+using eCommerce.Application.Interfaces.Repositories;
 using eCommerce.Domain.Order;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
-public class UpdateOrderStatusHandler : IRequestHandler<UpdateOrderStatusCommand, ReadOrderDto>
+namespace eCommerce.Application.Features.Orders.Commands.UpdateOrderStatus
 {
-    private readonly IeCommerceContext _context;
-
-    public UpdateOrderStatusHandler(IeCommerceContext context)
+    public class UpdateOrderStatusHandler(
+    IOrderRepository orders,
+    IOrderQueries queries,
+    ICurrentUser user,
+    IUnitOfWork unitOfWork)
+    : IRequestHandler<UpdateOrderStatusCommand, OrderResponse>
     {
-        _context = context;
-    }
+        private readonly IOrderRepository _orders = orders;
+        private readonly IOrderQueries _queries = queries;
+        private readonly ICurrentUser _user = user;
+        private readonly IUnitOfWork _unitOfWork = unitOfWork;
 
-    public async Task<ReadOrderDto> Handle(UpdateOrderStatusCommand request, CancellationToken ct)
-    {
-        var order = await _context.Orders
-            .Include(o => o.OrderItems)
-                .ThenInclude(oi => oi.ProductVariant)
-            .FirstOrDefaultAsync(o => o.Id == request.OrderId, ct);
+        public async Task<OrderResponse> Handle(UpdateOrderStatusCommand request, CancellationToken ct)
+        {
+            var order = await _orders.GetByIdAsync(
+                request.OrderId,
+                _user.UserId,
+                _user.AnonymousId,
+                ct)
+                ?? throw new NotFoundException(
+                    "Order not found.");
 
-        if (order == null) throw new NotFoundException("Order not found.");
-        if (order.Status == OrderStatus.Cancelled) throw new BusinessRuleException("Cancelled orders cannot be updated.");
-        if (order.Status == OrderStatus.Delivered && request.Status != OrderStatus.Delivered)
-            throw new BusinessRuleException("Delivered orders cannot be changed.");
+            try
+            {
+                switch (request.Status)
+                {
+                    case OrderStatus.Processing:
+                        order.Process();
+                        break;
 
-        order.Status = request.Status;
+                    case OrderStatus.Shipped:
+                        order.Ship();
+                        break;
 
-        await _context.SaveChangesAsync(ct);
+                    case OrderStatus.Delivered:
+                        order.Deliver();
+                        break;
 
-        return await _context.Orders
-            .Where(o => o.Id == order.Id)
-            .ToOrderDto()
-            .FirstAsync(ct);
+                    case OrderStatus.Cancelled:
+                        order.Cancel();
+                        break;
+
+                    default:
+                        throw new BusinessRuleException(
+                            $"Transition to status '{request.Status}' is not supported.");
+                }
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new BusinessRuleException(ex.Message);
+            }
+
+            await _unitOfWork.SaveChangesAsync(ct);
+
+            return await _queries.GetByIdAsync(
+                order.Id,
+                _user.UserId,
+                _user.AnonymousId,
+                ct)
+                ?? throw new NotFoundException(
+                    "The order could not be found.");
+        }
     }
 }

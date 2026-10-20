@@ -7,165 +7,55 @@
 }
 
 @if (product.value(); as result) {
-
-<h1>{{ result.name }}</h1>
-
-<p>{{ result.description }}</p>
-
-
-<section class="product-images">
-
-    @if (selectedOptionValueImages().length) {
-
-        @for (
-            image of selectedOptionValueImages();
-            track image.id
-        ) {
-
-            <img
-                [src]="image.url"
-                [alt]="result.name"
-                width="250"
-            />
-
+    <h1>{{ result.name }}</h1>
+    <p>{{ result.description }}</p>
+    <section class="product-images">
+        @if (selectedVariantPictures().length) {
+            @for (picture of selectedVariantPictures(); track picture.location) {
+                <img [src]="picture.location" [alt]="result.name" width="250"/>
+            }
+        } @else {
+            <div class="image-placeholder">No image available</div>
         }
-
-    } @else {
-
-        <div class="image-placeholder">
-            No image available
-        </div>
-
-    }
-
-</section>
+    </section> 
 
 
 <section class="product-options">
-
-    @for (option of result.options; track option.id) {
-
+        @for (option of result.options; track option.id) {
         <section class="option-group">
-
-            <h3>
-                {{ option.name }}
-            </h3>
-
-
+            <h3>{{ option.name }}</h3>
             <div class="option-values">
-
-                @for (
-                    value of getOptionValues(option.id);
-                    track value.id
-                ) {
-
-                    @if (
-                        option.name.toLowerCase() === 'color'
-                    ) {
-
-                        <button
-                            type="button"
-                            class="color-swatch"
-                            [class.selected]="
-                                isSelected(
-                                    option.id,
-                                    value.id
-                                )
-                            "
-                            [style.background-color]="value.value"
-                            [title]="value.value"
-                            (click)="
-                                selectOption(
-                                    option.id,
-                                    value.id
-                                )
-                            "
-                        >
-                        </button>
-
-                    } @else {
-
-                        <button
-                            type="button"
-                            class="option-button"
-                            [class.selected]="
-                                isSelected(
-                                    option.id,
-                                    value.id
-                                )
-                            "
-                            (click)="
-                                selectOption(
-                                    option.id,
-                                    value.id
-                                )
-                            "
-                        >
-
-                            {{ value.value }}
-
-                        </button>
-
-                    }
-
+            @for (value of option.optionValues; track value.id) {
+                @if (option.name.toLowerCase() === 'color') {
+                <button type="button" class="color-swatch"
+                    [class.selected]="isSelected(option.id, value.id)"
+                    [style.background-color]="value.value"
+                    [title]="value.value"
+                    (click)="selectOption(option.id, value.id)">
+                </button>
+                } @else {
+                <button type="button" class="option-button"
+                    [class.selected]="isSelected(option.id, value.id)"
+                    (click)="selectOption(option.id, value.id)">
+                    {{ value.value }}
+                </button>
                 }
-
+            }
             </div>
-
         </section>
-
-    }
-
-</section>
-
-
-@if (selectedVariant(); as variant) {
-
-    <section class="selected-variant">
-
-        <p>
-            SKU:
-            {{ variant.sku }}
-        </p>
-
-
-        <p>
-            Price:
-            ${{ variant.price }}
-        </p>
-
-
-        <p>
-            Stock:
-            {{ variant.stockQuantity }}
-        </p>
-
-
-        <button
-            type="button"
-            (click)="addToCart(variant.id)"
-        >
-
-            Add to Cart
-
-        </button>
-
+        }
     </section>
 
-} @else {
+    @if (selectedVariant(); as variant) {
+    <section class="selected-variant">
+        <p>SKU: {{ variant.sku }}</p>
+        <p>Price: ${{ variant.price }}</p>
+        <p>Stock: {{ variant.stockQuantity }}</p>
 
-    <p>
-        Please select all options.
-    </p>
-
-
-    <button
-        type="button"
-        disabled
-    >
-        Add to Cart
-    </button>
-
-}
-
+        <button type="button" (click)="addToCart(variant.id)">Add to Cart</button>
+    </section>
+    } @else {
+    <p>Please select all options.</p>
+    <button type="button" disabled>Add to Cart</button>
+    }
 }

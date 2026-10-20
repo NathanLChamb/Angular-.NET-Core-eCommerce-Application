@@ -5,73 +5,74 @@ using eCommerce.Application.Interfaces.Queries;
 using eCommerce.Application.Interfaces.Repositories;
 using eCommerce.Domain.Catalog.Products;
 using eCommerce.Domain.Catalog.Products.ProductValueObjects;
+using eCommerce.Domain.Catalog.ProductVariants;
 using eCommerce.Domain.Catalog.ProductVariants.ProductVariantValueObjects;
+using eCommerce.Domain.Catalog.ProductVariants.ValueObjects;
 using MediatR;
 
 namespace eCommerce.Application.Features.Products.Commands.CreateProduct
 {
-    public class CreateProductHandler : IRequestHandler<CreateProductCommand, ProductResponse>
+    public class CreateProductHandler(
+        IProductRepository products,
+        ICategoryRepository categories, 
+        IOptionRepository options,
+        IProductQueries queries, 
+        IUnitOfWork unitOfWork) 
+        : IRequestHandler<CreateProductCommand, ProductResponse>
     {
-        private readonly IProductRepository _products;
-        private readonly ICategoryRepository _categories;
-        private readonly IOptionRepository _options;
-        private readonly IProductQueries _queries;
-        private readonly IUnitOfWork _unitOfWork;
-        public CreateProductHandler(IProductRepository products,
-            ICategoryRepository categories, IOptionRepository options,
-            IProductQueries queries, IUnitOfWork unitOfWork)
-        {
-            _products = products;
-            _categories = categories;
-            _options = options;
-            _queries = queries;
-            _unitOfWork = unitOfWork;
-        }
+        private readonly IProductRepository _products = products;
+        private readonly ICategoryRepository _categories = categories;
+        private readonly IOptionRepository _options = options;
+        private readonly IProductQueries _queries = queries;
+        private readonly IUnitOfWork _unitOfWork = unitOfWork;
         public async Task<ProductResponse> Handle(CreateProductCommand request, CancellationToken ct)
         {
-            var product = new Product(new ProductName(request.Name));
+            var product = new Product(new Name(request.Name));
 
-            product.SetDescription(new ProductDescription(request.Description));
+            product.SetDescription(new Description(request.Description));
 
-            var categories = await _categories.GetByIdsAsync(request.CategoryIds, ct);
-
+            var categoryIds = request.CategoryIds.Distinct().ToList();
+            var categories = await _categories.GetByIdsAsync(categoryIds, ct);
             if (categories.Count != request.CategoryIds.Distinct().Count()) throw new NotFoundException(
                 "One or more categories were not found.");
 
-            foreach (var category in categories)
-            {
-                product.AddCategory(category);
-            }
-
-            var options = await _options.GetByIdsAsync(request.OptionIds, ct);
-
+            var optionIds = request.OptionIds.Distinct().ToList();
+            var options = await _options.GetByIdsAsync(optionIds, ct);
             if (options.Count != request.OptionIds.Distinct().Count()) throw new NotFoundException(
                 "One or more options were not found.");
 
-            foreach (var option in options)
-            {
-                product.AddOption(option);
-            }
+            product.AddCategories(categories);
+            product.AddOptions(options);
 
             var optionValuesById = options.SelectMany(o => o.Values)
-                    .ToDictionary(v => v.Id);
+                .ToDictionary(v => v.Id);
 
-            foreach (var variantRequest in request.ProductVariants)
+            var variants = request.ProductVariants.Select(variantRequest =>
             {
                 var optionValues = variantRequest.OptionValueIds
                     .Select(optionValueId =>
                     {
-                        if (!optionValuesById.TryGetValue(optionValueId, out var optionValue))
-                            throw new NotFoundException(
-                                $"Option value with ID {optionValueId} was not found among the selected product options.");
+                        if (!optionValuesById.TryGetValue(optionValueId, out var optionValue)) throw new NotFoundException(
+                            $"Option value with ID {optionValueId} was not found among the selected product options.");
 
                         return optionValue;
                     })
                     .ToList();
 
-                product.AddVariant(new ProductVariantSku(variantRequest.Sku), new Money(variantRequest.Price),
-                    new StockQuantity(variantRequest.StockQuantity), optionValues);
-            }
+                var pictures = variantRequest.Pictures
+                    .Select(picture =>
+                        new Picture(
+                            picture.Role,
+                            picture.Location)
+                        )
+                    .ToList();
+
+                return new ProductVariant(new Sku(variantRequest.Sku), new Price(variantRequest.Price),
+                    new StockQuantity(variantRequest.StockQuantity), optionValues, pictures);
+            })
+            .ToList();
+
+            product.AddVariants(variants);
 
             await _products.AddAsync(product, ct);
             await _unitOfWork.SaveChangesAsync(ct);

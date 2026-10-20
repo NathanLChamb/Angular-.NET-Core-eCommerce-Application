@@ -7,5 +7,5 @@ namespace eCommerce.Application.Features.Orders.Commands.UpdateOrderStatus
     public record UpdateOrderStatusCommand(
         int OrderId,
         OrderStatus Status
-    ) : IRequest<ReadOrderDto>;
+    ) : IRequest<OrderResponse>;
 }

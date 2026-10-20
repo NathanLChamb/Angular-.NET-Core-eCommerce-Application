@@ -3,42 +3,41 @@ using eCommerce.Domain.Catalog.Options;
 using eCommerce.Domain.Catalog.Products.ProductValueObjects;
 using eCommerce.Domain.Catalog.ProductVariants;
 using eCommerce.Domain.Catalog.ProductVariants.ProductVariantValueObjects;
+using eCommerce.Domain.Catalog.ProductVariants.ValueObjects;
 
 namespace eCommerce.Domain.Catalog.Products
 {
     public class Product
     {
-        private readonly List<Category> _categories = new();
-        private readonly List<Option> _options = new();
-        private readonly List<ProductVariant> _variants = new();
+        private readonly List<Category> _categories = [];
+        private readonly List<Option> _options = [];
+        private readonly List<ProductVariant> _variants = [];
         public int Id { get; private set; }
-        public ProductName Name { get; private set; }
-        public ProductDescription Description { get; private set; }
+        public Name Name { get; private set; }
+        public Description Description { get; private set; }
         public IReadOnlyCollection<Category> Categories => _categories;
         public IReadOnlyCollection<Option> Options => _options;
         public IReadOnlyCollection<ProductVariant> Variants => _variants;
-        public List<ProductImage> ProductImages { get; set; } = new();
-        public List<ProductOptionValueImage> ProductOptionValueImages { get; set; } = new();
-        public List<ProductCatalogAttribute> ProductCatalogAttributes { get; set; } = new();
-        public Product(ProductName name)
+        public List<ProductCatalogAttribute> ProductCatalogAttributes { get; set; } = [];
+        public Product(Name name)
         {
             Name = name;
-            Description = ProductDescription.None;
+            Description = Description.None;
         }
         private Product() { }
 
-        public void Rename(ProductName name)
+        public void Rename(Name name)
         {
             Name = name;
         }
 
-        public void SetDescription(ProductDescription description)
+        public void SetDescription(Description description)
         {
             Description = description;
         }
         public void RemoveDescription()
         {
-            Description = ProductDescription.None;
+            Description = Description.None;
         }
 
         public void AddCategory(Category category)
@@ -93,7 +92,7 @@ namespace eCommerce.Domain.Catalog.Products
             _variants.Remove(variant);
         }
 
-        public void ChangeVariantSku(ProductVariant variant, ProductVariantSku sku)
+        public void ChangeVariantSku(ProductVariant variant, Sku sku)
         {
             if (_variants.Any(v => v != variant && v.Sku == sku))
                 throw new InvalidOperationException($"Variant {sku} already belongs to this product.");
@@ -135,53 +134,63 @@ namespace eCommerce.Domain.Catalog.Products
                     _options.Add(option);
             }
         }
-
-        public void AddVariant(ProductVariantSku sku, Money price, 
-            StockQuantity stockQuantity, IEnumerable<OptionValue> optionValues)
+        public void AddCategories(IEnumerable<Category> categories)
         {
-            var variant = new ProductVariant(sku);
+            _categories.AddRange(categories);
+        }
+        public void UpdateCategories(IEnumerable<Category> categories)
+        {
+            var newCategories = categories.ToList();
+            var newCategoryIds = newCategories
+                .Select(c => c.Id)
+                .ToHashSet();
 
-            variant.SetPrice(price);
-            variant.SetStockQuantity(stockQuantity);
+            _categories.RemoveAll(c => !newCategoryIds.Contains(c.Id));
 
-            foreach (var optionValue in optionValues)
+            foreach (var category in newCategories)
             {
-                variant.AddOptionValue(optionValue);
+                if (!_categories.Any(c => c.Id == category.Id))
+                    _categories.Add(category);
             }
+        }
+        public void AddOptions(IEnumerable<Option> options)
+        {
+            _options.AddRange(options);
+        }
+        public void UpdateOptions(IEnumerable<Option> options)
+        {
+            var newOptions = options.ToList();
+            var newOptionIds = newOptions
+                .Select(o => o.Id)
+                .ToHashSet();
 
-            AddVariant(variant);
+            _options.RemoveAll(o => !newOptionIds.Contains(o.Id));
+
+            foreach (var option in newOptions)
+            {
+                if (!_options.Any(o => o.Id == option.Id))
+                    _options.Add(option);
+            }
         }
 
-        public void UpdateVariant(int variantId, ProductVariantSku sku, Money price, 
-            StockQuantity stockQuantity, IEnumerable<OptionValue> optionValues)
+        public void AddVariants(IEnumerable<ProductVariant> variants)
         {
-            var variant = _variants.FirstOrDefault(v => v.Id == variantId);
+            _variants.AddRange(variants);
+        }
+        public void UpdateVariant(int variantId, Sku sku, Price price, StockQuantity stockQuantity,
+            IEnumerable<OptionValue> optionValues, IEnumerable<Picture> pictures)
+        {
+            var variant = _variants.FirstOrDefault(v => v.Id == variantId)
+                ?? throw new ArgumentException(
+                    $"Variant with ID {variantId} does not belong to this product.",
+                    nameof(variantId));
 
-            if (variant == null) throw new InvalidOperationException(
-                    $"Variant {variantId} does not belong to this product.");
-
-            variant.ChangeSku(sku);
-            variant.SetPrice(price);
-            variant.SetStockQuantity(stockQuantity);
-            variant.ReplaceOptionValues(optionValues);
+            variant.Update(sku, price, stockQuantity, optionValues, pictures);
         }
 
-        public void RemoveVariantsNotIn(IEnumerable<int> variantIds)
+        public void RemoveVariantsNotIn(ISet<int> variantIds)
         {
-            var idsToKeep = variantIds.ToHashSet();
-
-            foreach (var id in idsToKeep)
-            {
-                if (!_variants.Any(v => v.Id == id)) throw new InvalidOperationException(
-                    $"Variant {id} does not belong to this product.");
-                
-            }
-
-            foreach (var variant in _variants.ToList())
-            {
-                if (!idsToKeep.Contains(variant.Id))
-                    _variants.Remove(variant);
-            }
+            _variants.RemoveAll(v => !variantIds.Contains(v.Id));
         }
     }
 }

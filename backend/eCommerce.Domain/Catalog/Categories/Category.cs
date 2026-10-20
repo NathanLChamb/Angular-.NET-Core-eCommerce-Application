@@ -6,16 +6,24 @@
         public string Name { get; private set; }
         public Category(string name)
         {
-            if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Category name cannot be empty", nameof(name));
+            var validatedName = ValidateName(name);
 
-            Name = name.Trim();
+            Name = validatedName;
         }
 
         public void Rename(string name)
         {
-            if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Category name cannot be empty", nameof(name));
+            var validatedName = ValidateName(name);
 
-            Name = name.Trim();
+            Name = validatedName;
+        }
+
+        private static string ValidateName(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException(
+                "Category name cannot be empty.", nameof(name));
+
+            return name.Trim();
         }
     }
 }

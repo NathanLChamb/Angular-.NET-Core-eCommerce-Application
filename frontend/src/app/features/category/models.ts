@@ -1,15 +1,12 @@
-export interface ReadCategoryDto {
+export interface CategoryResponse {
     id: number,
-    name: string,
-    description: string
+    name: string
 }
 
-export interface CreateCategoryDto {
-    name: string,
-    description: string
+export interface CreateCategoryRequest {
+    name: string
 }
 
-export interface UpdateCategoryDto {
-    name: string,
-    description: string
+export interface UpdateCategoryRequest {
+    name: string
 }

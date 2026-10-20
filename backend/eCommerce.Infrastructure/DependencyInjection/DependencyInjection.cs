@@ -3,9 +3,9 @@ using eCommerce.Application.Interfaces.Queries;
 using eCommerce.Application.Interfaces.Repositories;
 using eCommerce.Infrastructure.Identity;
 using eCommerce.Infrastructure.Persistence;
-using eCommerce.Infrastructure.Persistence.Queries;
 using eCommerce.Infrastructure.Persistence.Repositories;
 using eCommerce.Infrastructure.Queries;
+using eCommerce.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -16,72 +16,80 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 
-public static class DependencyInjection
+namespace eCommerce.Infrastructure.DependencyInjection
 {
-    public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
+    public static class DependencyInjection
     {
-        services.AddDbContext<eCommerceContext>(options =>
-            options.UseNpgsql(
-                configuration.GetConnectionString("DefaultConnectionString")));
-
-        JwtSecurityTokenHandler.DefaultMapInboundClaims = false;
-        services.AddIdentityCore<ApplicationUser>(options =>
+        public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
         {
-            options.User.RequireUniqueEmail = true;
-            options.Password.RequireDigit = true;
-            options.Password.RequireUppercase = true;
-            options.Password.RequireLowercase = true;
-            options.Password.RequiredLength = 8;
-        })
-        .AddRoles<IdentityRole>()
-        .AddEntityFrameworkStores<eCommerceContext>()
-        .AddSignInManager()
-        .AddDefaultTokenProviders();
+            services.AddDbContext<eCommerceContext>(options =>
+                options.UseNpgsql(
+                    configuration.GetConnectionString("DefaultConnectionString")));
 
-        services.AddScoped<IIdentityService, IdentityService>();
-        services.AddScoped<ITransactionManager, TransactionManager>();
-
-        services.AddAuthentication(options =>
-        {
-            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-        })
-        .AddJwtBearer(options =>
-        {
-            options.TokenValidationParameters = new TokenValidationParameters
+            JwtSecurityTokenHandler.DefaultMapInboundClaims = false;
+            services.AddIdentityCore<ApplicationUser>(options =>
             {
-                ValidateIssuer = true,
-                ValidateAudience = true,
-                ValidateLifetime = true,
-                ValidateIssuerSigningKey = true,
+                options.User.RequireUniqueEmail = true;
+                options.Password.RequireDigit = true;
+                options.Password.RequireUppercase = true;
+                options.Password.RequireLowercase = true;
+                options.Password.RequiredLength = 8;
+            })
+            .AddRoles<IdentityRole>()
+            .AddEntityFrameworkStores<eCommerceContext>()
+            .AddSignInManager()
+            .AddDefaultTokenProviders();
 
-                ValidIssuer = configuration["Jwt:Issuer"],
-                ValidAudience = configuration["Jwt:Audience"],
+            services.AddScoped<IIdentityService, IdentityService>();
+            services.AddScoped<ITransactionManager, TransactionManager>();
+            
 
-                IssuerSigningKey = new SymmetricSecurityKey(
-                    Encoding.UTF8.GetBytes(configuration["Jwt:Key"]!)),
+            services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
 
-                NameClaimType = JwtRegisteredClaimNames.Email,
-                RoleClaimType = ClaimTypes.Role
-            };
-        });
+                    ValidIssuer = configuration["Jwt:Issuer"],
+                    ValidAudience = configuration["Jwt:Audience"],
 
-        
-        services.AddAuthorization();
-        services.AddScoped<ITokenService, TokenService>();
-        services.AddScoped<IdentitySeeder>();
+                    IssuerSigningKey = new SymmetricSecurityKey(
+                        Encoding.UTF8.GetBytes(configuration["Jwt:Key"]!)),
 
-        services.AddScoped<ICartQueries, CartQueries>();
-        services.AddScoped<IProductQueries, ProductQueries>();
-        services.AddScoped<IOptionQueries, OptionQueries>();
-        services.AddScoped<ICategoryQueries, CategoryQueries>();
+                    NameClaimType = JwtRegisteredClaimNames.Email,
+                    RoleClaimType = ClaimTypes.Role
+                };
+            });
 
-        services.AddScoped<IProductRepository, ProductRepository>();
-        services.AddScoped<IOptionRepository, OptionRepository>();
-        services.AddScoped<ICategoryRepository, CategoryRepository>();
 
-        services.AddScoped<IUnitOfWork>(provider => provider.GetRequiredService<eCommerceContext>());
+            services.AddAuthorization();
+            services.AddScoped<ITokenService, TokenService>();
+            services.AddScoped<IdentitySeeder>();
+            services.AddScoped<ICurrentUser, CurrentUser>();
 
-        return services;
+            services.AddScoped<ICartQueries, CartQueries>();
+            services.AddScoped<IProductQueries, ProductQueries>();
+            services.AddScoped<IOptionQueries, OptionQueries>();
+            services.AddScoped<ICategoryQueries, CategoryQueries>();
+            services.AddScoped<IOrderQueries, OrderQueries>();
+
+            services.AddScoped<IProductRepository, ProductRepository>();
+            services.AddScoped<IOptionRepository, OptionRepository>();
+            services.AddScoped<ICategoryRepository, CategoryRepository>();
+            services.AddScoped<IOrderRepository, OrderRepository>();
+            services.AddScoped<ICartRepository, CartRepository>();
+
+            services.AddScoped<IUnitOfWork>(provider => provider.GetRequiredService<eCommerceContext>());
+
+            return services;
+        }
     }
 }

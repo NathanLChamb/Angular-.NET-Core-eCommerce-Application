@@ -1,6 +1,7 @@
 using eCommerce.Api.Middleware;
 using eCommerce.Application;
 using eCommerce.Application.Interfaces;
+using eCommerce.Infrastructure.DependencyInjection;
 using eCommerce.Infrastructure.Identity;
 using eCommerce.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -22,6 +23,7 @@ builder.Services.AddCors(options =>
     });
 });
 
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddApplication();
 

@@ -1,4 +1,5 @@
-﻿using eCommerce.Domain.Order;
+﻿using eCommerce.Domain.Catalog.ProductVariants;
+using eCommerce.Domain.Order;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -8,38 +9,56 @@ namespace eCommerce.Infrastructure.Persistence.Configurations
     {
         public void Configure(EntityTypeBuilder<OrderItem> builder)
         {
-            builder.HasKey(oi => oi.Id);
+            builder.HasKey(i => i.Id);
 
-            builder.Property(oi => oi.OrderId)
+            builder.Property<int>("OrderId")
                 .IsRequired();
 
-            builder.HasOne(oi => oi.Order)
-                .WithMany(o => o.OrderItems)
-                .HasForeignKey(oi => oi.OrderId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            builder.Property(oi => oi.ProductVariantId)
+            builder.Property(i => i.ProductVariantId)
                 .IsRequired();
 
-            builder.HasOne(oi => oi.ProductVariant)
+            builder.HasIndex("OrderId", nameof(OrderItem.ProductVariantId));
+
+            builder.OwnsOne(i => i.Product, product =>
+            {
+                product.Property(p => p.ProductName)
+                    .HasColumnName("ProductName")
+                    .HasMaxLength(200)
+                    .IsRequired();
+
+                product.Property(p => p.Sku)
+                    .HasColumnName("Sku")
+                    .HasMaxLength(64)
+                    .IsRequired();
+
+                product.Property(p => p.Image)
+                    .HasColumnName("ProductImage")
+                    .HasConversion(
+                        image => image == null
+                            ? null
+                            : image.ToString(),
+                        value => value == null
+                            ? null
+                            : new Uri(value, UriKind.Absolute));
+            });
+
+            builder.OwnsOne(i => i.UnitPrice, price =>
+            {
+                price.Property(p => p.Amount)
+                    .HasColumnName("UnitPrice")
+                    .HasPrecision(18, 2)
+                    .IsRequired();
+            });
+
+            builder.Property(i => i.Quantity)
+                .IsRequired();
+
+            builder.Ignore(i => i.LineTotal);
+
+            builder.HasOne<ProductVariant>()
                 .WithMany()
-                .HasForeignKey(oi => oi.ProductVariantId)
+                .HasForeignKey(i => i.ProductVariantId)
                 .OnDelete(DeleteBehavior.Restrict);
-
-            builder.Property(oi => oi.ProductName)
-                .IsRequired()
-                .HasMaxLength(500);
-
-            builder.Property(oi => oi.Sku)
-                .IsRequired()
-                .HasMaxLength(64);
-
-            builder.Property(oi => oi.PriceAtPurchase)
-                .HasPrecision(18, 2)
-                .IsRequired();
-
-            builder.Property(oi => oi.Quantity)
-                .IsRequired();
         }
     }
 }

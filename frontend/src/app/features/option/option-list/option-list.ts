@@ -20,7 +20,7 @@ export class OptionList {
       pageNumber: this.pageNumber(),
       pageSize: this.pageSize()
     }),
-    stream: ({params}) => this.optionService.GetAllOptions(params)
+    stream: ({params}) => this.optionService.getAllOptions(params)
   })
 
   protected totalPages = computed(() => {
@@ -43,7 +43,7 @@ export class OptionList {
   }
 
   protected handleDelete(id: number) {
-    this.optionService.DeleteOption(id).subscribe({
+    this.optionService.deleteOption(id).subscribe({
       next: () => this.options.reload()
     })
   }

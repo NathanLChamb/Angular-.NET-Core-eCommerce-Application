@@ -1,10 +1,8 @@
-﻿using eCommerce.Domain.Catalog.Products;
-
-namespace eCommerce.Domain.Catalog.Options
+﻿namespace eCommerce.Domain.Catalog.Options
 {
     public class Option
     {
-        private readonly List<OptionValue> _values = new();
+        private readonly List<OptionValue> _values = [];
         public int Id { get; private set; }
         public string Name { get; private set; }
         public IReadOnlyCollection<OptionValue> Values => _values;
@@ -39,8 +37,8 @@ namespace eCommerce.Domain.Catalog.Options
             if (string.IsNullOrWhiteSpace(newValue)) throw new ArgumentException(
                     "Option value cannot be empty", nameof(newValue));
 
-            var value = _values.FirstOrDefault(v => v.Id == valueId);
-            if (value == null) throw new InvalidOperationException(
+            var value = _values.FirstOrDefault(v => v.Id == valueId)
+                ?? throw new InvalidOperationException(
                     $"Option value with ID {valueId} does not belong to this option");
 
             var trimmedValue = newValue.Trim();

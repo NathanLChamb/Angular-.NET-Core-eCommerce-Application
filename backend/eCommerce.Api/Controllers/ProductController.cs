@@ -1,16 +1,9 @@
-﻿using eCommerce.Api.Contracts.Products;
-using eCommerce.Application.Common.Constants;
+﻿using eCommerce.Application.Common.Constants;
 using eCommerce.Application.Features.Products.Commands.CreateProduct;
 using eCommerce.Application.Features.Products.Commands.DeleteProduct;
 using eCommerce.Application.Features.Products.Commands.UpdateProduct;
 using eCommerce.Application.Features.Products.DTOs;
 using eCommerce.Application.Features.Products.Filters;
-using eCommerce.Application.Features.Products.Images.Commands.AddProductImage;
-using eCommerce.Application.Features.Products.Images.Commands.AddProductOptionValueImage;
-using eCommerce.Application.Features.Products.Images.Commands.DeleteProductImage;
-using eCommerce.Application.Features.Products.Images.Commands.DeleteProductOptionValueImage;
-using eCommerce.Application.Features.Products.Images.Commands.UpdateProductOptionValueImage;
-using eCommerce.Application.Features.Products.Images.DTOs;
 using eCommerce.Application.Features.Products.Queries.GetAllProducts;
 using eCommerce.Application.Features.Products.Queries.GetProductById;
 using eCommerce.Application.Shared;
@@ -22,13 +15,12 @@ namespace eCommerce.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class ProductController : ControllerBase
+    public class ProductController(
+        IMediator mediator) 
+        : ControllerBase
     {
-        private readonly IMediator _mediator;
-        public ProductController(IMediator mediator)
-        {
-            _mediator = mediator;
-        }
+        private readonly IMediator _mediator = mediator;
+
         [AllowAnonymous]
         [HttpGet]
         public async Task<ActionResult<PagedResult<ProductResponse>>> GetAllProducts([FromQuery] ProductSearchFilter filter)
@@ -63,53 +55,6 @@ namespace eCommerce.Api.Controllers
         {
             await _mediator.Send(new DeleteProductCommand(id));
             return NoContent();
-        }
-
-        [Authorize(Roles = Roles.Admin)]
-        [HttpPost("{id:int}/images")]
-        public async Task<ActionResult<ProductImageDto>> AddImage(int id, [FromBody] AddProductImageRequest request, CancellationToken ct)
-        {
-            var image = await _mediator.Send(new AddProductImageCommand(id, request.Url, request.DisplayOrder), ct);
-            return Ok(image);
-        }
-
-        [Authorize(Roles = Roles.Admin)]
-        [HttpDelete("{productId:int}/images/{imageId:int}")]
-        public async Task<IActionResult> DeleteImage(int productId, int imageId, CancellationToken ct)
-        {
-            await _mediator.Send(new DeleteProductImageCommand(productId, imageId), ct);
-            return NoContent();
-        }
-
-        [Authorize(Roles = Roles.Admin)]
-        [HttpPost("{productId:int}/option-value-images")]
-        public async Task<ActionResult<ProductOptionValueImageDto>> AddOptionValueImage(int productId, [FromBody] AddProductOptionValueImageRequest request, CancellationToken ct)
-        {
-            var image = await _mediator.Send(new AddProductOptionValueImageCommand(productId, request.Url, request.IsDefault, request.OptionValueIds), ct);
-            return Ok(image);
-        }
-
-        [Authorize(Roles = Roles.Admin)]
-        [HttpDelete("{productId:int}/option-value-images/{imageId:int}")]
-        public async Task<IActionResult> DeleteOptionValueImage(int productId, int imageId, CancellationToken ct)
-        {
-            await _mediator.Send(new DeleteProductOptionValueImageCommand(productId, imageId), ct);
-            return NoContent();
-        }
-
-        [Authorize(Roles = Roles.Admin)]
-        [HttpPut("{productId:int}/option-value-images/{imageId:int}")]
-        public async Task<ActionResult<ProductOptionValueImageDto>> UpdateProductOptionValueImage(
-            int productId, 
-            int imageId,
-            UpdateProductOptionValueImageRequest request,
-            CancellationToken ct)
-        {
-            var image = await _mediator.Send(new UpdateProductOptionValueImageCommand(
-                productId, imageId, request.Url, 
-                request.IsDefault, request.OptionValueIds), ct);
-
-            return Ok(image);
         }
     }
 }

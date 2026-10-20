@@ -5,51 +5,53 @@ using Microsoft.EntityFrameworkCore;
 
 namespace eCommerce.Infrastructure.Queries
 {
-    public class CartQueries : ICartQueries
+    public class CartQueries(
+        eCommerceContext context) 
+        : ICartQueries
     {
-        private readonly eCommerceContext _context;
+        private readonly eCommerceContext _context = context;
 
-        public CartQueries(eCommerceContext context)
+        public async Task<CartResponse?> GetCartDetailsAsync(
+            string? userId,
+            Guid? anonymousId,
+            CancellationToken ct = default)
         {
-            _context = context;
-        }
+            if (string.IsNullOrWhiteSpace(userId) && anonymousId is null)
+                throw new ArgumentException(
+                    "Either userId or anonymousId must be provided.");
 
-        public async Task<ReadCartDto?> GetByIdAsync(
-            int cartId,
-            CancellationToken ct)
-        {
-            return await _context.Carts
+            if (!string.IsNullOrWhiteSpace(userId) && anonymousId is not null)
+                throw new ArgumentException(
+                    "A cart cannot be identified by both userId and anonymousId.");
+
+            var cart = await _context.Carts
                 .AsNoTracking()
-                .Where(c => c.Id == cartId)
-                .Select(c => new ReadCartDto
+                .Where(c =>
+                    (!string.IsNullOrWhiteSpace(userId) && c.UserId == userId) ||
+                    (anonymousId != null && c.AnonymousId == anonymousId))
+                .Select(c => new CartResponse
                 {
                     Id = c.Id,
-
-                    Items = c.Items.Select(ci => new ReadCartItemDto
-                    {
-                        Id = ci.Id,
-                        ProductVariantId = ci.ProductVariantId,
-
-                        ProductName = _context.Products
-                            .Where(p =>
-                                p.Id == EF.Property<int>(ci.ProductVariant, "ProductId"))
-                            .Select(p => p.Name.Value)
-                            .First(),
-                        OptionValues = ci.ProductVariant.OptionValues
-                            .Select(ov => new ReadOptionValueFromCartDto
-                            {
-                                Value = ov.Value
-                            })
-                            .ToList(),
-                        UnitPrice = ci.ProductVariant.Price!.Amount,
-                        Quantity = ci.Quantity,
-                        TotalPrice =
-                            ci.ProductVariant.Price!.Amount * ci.Quantity
-                    }).ToList(),
-                    TotalPrice = c.Items.Sum(
-                        i => i.ProductVariant.Price!.Amount * i.Quantity)
+                    CreatedAt = c.CreatedAt,
+                    UpdatedAt = c.UpdatedAt,
+                    Items = c.Items
+                        .Select(item => new CartItemResponse
+                        {
+                            Id = item.Id,
+                            ProductVariantId = item.ProductVariantId,
+                            ProductName = item.Product.ProductName,
+                            Sku = item.Product.Sku,
+                            UnitPrice = item.UnitPrice.Amount,
+                            Quantity = item.Quantity,
+                            LineTotal = item.TotalPrice,
+                            ImageUrl = item.Product.Image == null ? null : item.Product.Image.ToString()
+                        })
+                        .ToList(),
+                    Subtotal = c.Items.Sum(item => item.UnitPrice.Amount * item.Quantity),
                 })
-                .FirstOrDefaultAsync(ct);
+                .SingleOrDefaultAsync(ct);
+
+            return cart;
         }
     }
 }

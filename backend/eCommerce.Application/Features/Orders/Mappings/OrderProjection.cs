@@ -5,25 +5,30 @@ namespace eCommerce.Application.Features.Orders.Mappings
 {
     public static class OrderProjection
     {
-        public static IQueryable<ReadOrderDto> ToOrderDto(this IQueryable<Order> query)
+        public static IQueryable<OrderResponse> ToOrderDto(this IQueryable<Order> query)
         {
-            return query.Select(o => new ReadOrderDto
+            return query.Select(o => new OrderResponse
             {
                 Id = o.Id,
-                OrderNumber = o.OrderNumber,
-                ShippingAddress = o.ShippingAddress,
-                TotalPrice = o.TotalPrice,
+                OrderNumber = o.OrderNumber.Value,
+                ShippingAddress = o.ShippingAddress.Value,
                 Status = o.Status.ToString(),
                 OrderDate = o.OrderDate,
+                TotalPrice = o.Items.Sum(
+                        i => i.UnitPrice.Amount * i.Quantity),
 
-                Items = o.OrderItems.Select(i => new ReadOrderItemDto
+                Items = o.Items.Select(i => new OrderItemResponse
                 {
                     Id = i.Id,
-                    ProductName = i.ProductName,
-                    Sku = i.Sku,
-                    PriceAtPurchase = i.PriceAtPurchase,
+                    ProductVariantId = i.ProductVariantId,
+                    ProductName = i.Product.ProductName,
+                    Sku = i.Product.Sku,
+                    ImageUrl = i.Product.Image == null
+                        ? null
+                        : i.Product.Image.ToString(),
+                    UnitPrice = i.UnitPrice.Amount,
                     Quantity = i.Quantity,
-                    TotalPrice = i.PriceAtPurchase * i.Quantity
+                    LineTotal = i.UnitPrice.Amount * i.Quantity
                 }).ToList()
             });
         }

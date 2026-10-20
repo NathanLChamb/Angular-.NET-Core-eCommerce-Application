@@ -7,7 +7,6 @@ import { catchError, EMPTY, tap } from 'rxjs';
 
 type CategoryFormGroup = FormGroup<{
   name: FormControl<string>
-  description: FormControl<string>
 }>
 @Component({
   selector: 'app-category-form',
@@ -24,13 +23,9 @@ export class CategoryForm {
   get name() {
     return this.form.controls.name
   }
-  get description() {
-    return this.form.controls.description
-  }
 
   protected form: CategoryFormGroup = this.fb.nonNullable.group({
     name: ['', [Validators.required, Validators.maxLength(50)]],
-    description: ['', [Validators.required, Validators.maxLength(300)]]
   })
 
   protected category = rxResource({
@@ -40,11 +35,10 @@ export class CategoryForm {
     },
     stream: ({params}) => {
       if (!params) return EMPTY
-      return this.categoryService.GetCategoryById(params.id).pipe(
+      return this.categoryService.getCategoryById(params.id).pipe(
         tap(category => {
           this.form.patchValue({
-            name: category.name,
-            description: category.description
+            name: category.name
           })
         }),
         catchError(error => {
@@ -62,16 +56,15 @@ export class CategoryForm {
 
     const raw = this.form.getRawValue()
     const dto = {
-      name: raw.name.trim(),
-      description: raw.description.trim()
+      name: raw.name.trim()
     }
 
     if (this.isEditMode()) {
-      this.categoryService.UpdateCategory(Number(this.id()), dto).subscribe({
+      this.categoryService.updateCategory(Number(this.id()), dto).subscribe({
         next: () => this.router.navigate(['/category'])
       })
     } else {
-      this.categoryService.CreateCategory(dto).subscribe({
+      this.categoryService.createCategory(dto).subscribe({
         next: () => this.router.navigate(['/category'])
       })
     }

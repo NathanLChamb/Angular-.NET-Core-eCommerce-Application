@@ -15,18 +15,16 @@ namespace eCommerce.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class CartController : ControllerBase
+    public class CartController(
+        IMediator mediator) 
+        : ControllerBase
     {
-        private readonly IMediator _mediator;
+        private readonly IMediator _mediator = mediator;
         private string UserId => User.FindFirstValue(JwtRegisteredClaimNames.Sub) ?? throw new UnauthorizedAccessException();
-        public CartController(IMediator mediator)
-        {
-            _mediator = mediator;
-        }
 
         [Authorize]
         [HttpGet]
-        public async Task<ActionResult<ReadCartDto>> GetCart(CancellationToken ct)
+        public async Task<ActionResult<CartResponse>> GetCart(CancellationToken ct)
         {
             var cart = await _mediator.Send(new GetCartQuery(UserId), ct);
             return Ok(cart);
@@ -34,7 +32,7 @@ namespace eCommerce.Api.Controllers
 
         [Authorize]
         [HttpPost("items")]
-        public async Task<ActionResult<ReadCartDto>> AddItem([FromBody] AddCartItemRequest request, CancellationToken ct)
+        public async Task<ActionResult<CartResponse>> AddItem([FromBody] AddCartItemRequest request, CancellationToken ct)
         {
             var cart = await _mediator.Send(new AddCartItemCommand(UserId, request.ProductVariantId, request.Quantity), ct);
             return Ok(cart);
@@ -42,7 +40,7 @@ namespace eCommerce.Api.Controllers
 
         [Authorize]
         [HttpPut("items/{productVariantId:int}")]
-        public async Task<ActionResult<ReadCartDto>> UpdateQuantity(int productVariantId, UpdateCartItemQuantityRequest request, CancellationToken ct)
+        public async Task<ActionResult<CartResponse>> UpdateQuantity(int productVariantId, UpdateCartItemQuantityRequest request, CancellationToken ct)
         {
             var cart = await _mediator.Send(new UpdateCartItemQuantityCommand(UserId, productVariantId, request.Quantity), ct);
             return Ok(cart);
@@ -50,7 +48,7 @@ namespace eCommerce.Api.Controllers
 
         [Authorize]
         [HttpDelete("items/{productVariantId:int}")]
-        public async Task<ActionResult<ReadCartDto>> RemoveItem(int productVariantId, CancellationToken ct)
+        public async Task<ActionResult<CartResponse>> RemoveItem(int productVariantId, CancellationToken ct)
         {
             var cart = await _mediator.Send(new RemoveCartItemCommand(UserId, productVariantId), ct);
             return Ok(cart);
@@ -58,7 +56,7 @@ namespace eCommerce.Api.Controllers
 
         [Authorize]
         [HttpDelete]
-        public async Task<ActionResult<ReadCartDto>> ClearCart(CancellationToken ct)
+        public async Task<ActionResult<CartResponse>> ClearCart(CancellationToken ct)
         {
             var cart = await _mediator.Send(new ClearCartCommand(UserId), ct);
             return Ok(cart);

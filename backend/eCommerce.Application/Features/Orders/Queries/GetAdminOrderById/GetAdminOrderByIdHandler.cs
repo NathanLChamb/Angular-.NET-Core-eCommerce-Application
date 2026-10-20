@@ -1,28 +1,20 @@
-﻿using eCommerce.Application.Exceptions;
-using eCommerce.Application.Features.Orders.Mappings;
-using eCommerce.Application.Interfaces;
+﻿using eCommerce.Application.Features.Orders.DTOs;
+using eCommerce.Application.Interfaces.Queries;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace eCommerce.Application.Features.Orders.Queries.GetAdminOrderById
 {
-    public class GetAdminOrderByIdHandler : IRequestHandler<GetAdminOrderByIdQuery, ReadOrderFromAdminDto>
+    public class GetAdminOrderByIdHandler(
+        IOrderQueries queries)
+        : IRequestHandler<GetAdminOrderByIdQuery, AdminOrderResponse?>
     {
-        private readonly IeCommerceContext _context;
+        private readonly IOrderQueries _queries = queries;
 
-        public GetAdminOrderByIdHandler(IeCommerceContext context)
+        public async Task<AdminOrderResponse?> Handle(
+            GetAdminOrderByIdQuery request, 
+            CancellationToken ct)
         {
-            _context = context;
-        }
-
-        public async Task<ReadOrderFromAdminDto> Handle(GetAdminOrderByIdQuery request, CancellationToken ct)
-        {
-            var order = await _context.Orders
-                .AsNoTracking()
-                .Where(o => o.Id == request.Id)
-                .ToAdminOrderDto()
-                .SingleOrDefaultAsync(ct);
-            if (order == null) throw new NotFoundException("Order not found.");
+            var order = await _queries.AdminGetByIdAsync(request.Id, ct);
 
             return order;
         }

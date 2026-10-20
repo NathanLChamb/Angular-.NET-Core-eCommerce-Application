@@ -6,5 +6,5 @@ namespace eCommerce.Application.Features.Orders.Commands.CancelOrder
     public record CancelOrderCommand(
         int OrderId,
         string UserId
-    ) : IRequest<ReadOrderDto>;
+    ) : IRequest<OrderResponse>;
 }

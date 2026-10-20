@@ -2,9 +2,9 @@ import { Component, computed, inject, input } from '@angular/core';
 import { OptionService } from '../option-service';
 import { FormArray, FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { ReadOptionDto } from '../models';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { catchError, EMPTY, finalize, tap } from 'rxjs';
+import { OptionResponse } from '../models';
 
 type OptionFormGroup = FormGroup<{
   name: FormControl<string>
@@ -63,7 +63,7 @@ export class OptionForm {
       }
       this.form.disable()
 
-      return this.optionService.GetOptionById(params.id).pipe(
+      return this.optionService.getOptionById(params.id).pipe(
         tap(option => {
           this.seedForm(option)
         }),
@@ -80,7 +80,7 @@ export class OptionForm {
     }
   })
 
-  protected seedForm(option: ReadOptionDto) {
+  protected seedForm(option: OptionResponse) {
     this.form.patchValue({ name: option.name })
 
     this.optionValues.clear()
@@ -107,11 +107,11 @@ export class OptionForm {
     }
 
     if (this.isEditMode()) {
-      this.optionService.UpdateOption(Number(this.id()), dto).subscribe({
+      this.optionService.updateOption(Number(this.id()), dto).subscribe({
         next: () => this.router.navigate(['/option'])
       })
     } else {
-      this.optionService.CreateOption({
+      this.optionService.createOption({
         name: dto.name,
         optionValues: dto.optionValues.map(val => val.value)
       }).subscribe({

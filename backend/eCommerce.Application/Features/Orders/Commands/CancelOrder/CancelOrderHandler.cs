@@ -1,45 +1,102 @@
 ﻿using eCommerce.Application.Exceptions;
-using eCommerce.Application.Features.Orders.Commands.CancelOrder;
 using eCommerce.Application.Features.Orders.DTOs;
-using eCommerce.Application.Features.Orders.Mappings;
 using eCommerce.Application.Interfaces;
+using eCommerce.Application.Interfaces.Queries;
+using eCommerce.Application.Interfaces.Repositories;
 using eCommerce.Domain.Catalog.ProductVariants.ProductVariantValueObjects;
-using eCommerce.Domain.Order;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
-public class CancelOrderHandler : IRequestHandler<CancelOrderCommand, ReadOrderDto>
+namespace eCommerce.Application.Features.Orders.Commands.CancelOrder
 {
-    private readonly IeCommerceContext _context;
-    public CancelOrderHandler(IeCommerceContext context)
+    public class CancelOrderHandler(
+    IOrderRepository orders,
+    IOrderQueries queries,
+    IProductRepository products,
+    ICurrentUser user,
+    IUnitOfWork unitOfWork,
+    ITransactionManager transaction)
+    : IRequestHandler<CancelOrderCommand, OrderResponse>
     {
-        _context = context;
-    }
+        private readonly IOrderRepository _orders = orders;
+        private readonly IOrderQueries _queries = queries;
+        private readonly IProductRepository _products = products;
+        private readonly ICurrentUser _user = user;
+        private readonly IUnitOfWork _unitOfWork = unitOfWork;
+        private readonly ITransactionManager _transaction = transaction;
 
-    public async Task<ReadOrderDto> Handle(CancelOrderCommand request, CancellationToken ct)
-    {
-        var order = await _context.Orders
-            .Include(o => o.OrderItems)
-            .FirstOrDefaultAsync(o => o.Id == request.OrderId && o.UserId == request.UserId, ct);
-
-        if (order == null) throw new NotFoundException("Order not found.");
-
-        if (order.Status != OrderStatus.Pending && order.Status != OrderStatus.Processing)
-            throw new BusinessRuleException("Only pending or processing orders can be cancelled.");
-        
-        foreach (var item in order.OrderItems)
+        public async Task<OrderResponse> Handle(CancelOrderCommand request, CancellationToken ct)
         {
-            var variant = await _context.ProductVariants
-                .FirstAsync(pv => pv.Id == item.ProductVariantId, ct);
-            variant.IncreaseStock(new StockQuantity(item.Quantity));
+            ValidateCurrentUser();
+
+            await _transaction.BeginTransactionAsync(ct);
+
+            try
+            {
+                var order = await _orders.GetByIdAsync(
+                    request.OrderId, _user.UserId, _user.AnonymousId, ct)
+                    ?? throw new NotFoundException(
+                        "Order not found.");
+
+                order.Cancel();
+
+                var variantIds = order.Items
+                    .Select(i => i.ProductVariantId)
+                    .Distinct()
+                    .ToArray();
+
+                var products = await _products.GetByVariantIdsAsync(variantIds, ct);
+
+                var variantsById = products
+                    .SelectMany(p => p.Variants)
+                    .Where(v => variantIds.Contains(v.Id))
+                    .ToDictionary(v => v.Id);
+
+                foreach (var item in order.Items)
+                {
+                    if (!variantsById.ContainsKey(item.ProductVariantId))
+                    {
+                        throw new NotFoundException(
+                            $"Product variant {item.ProductVariantId} " +
+                            "was not found while cancelling the order.");
+                    }
+                }
+
+                foreach (var item in order.Items)
+                {
+                    var variant = variantsById[item.ProductVariantId];
+
+                    variant.IncreaseStock(new StockQuantity(item.Quantity));
+                }
+
+                await _unitOfWork.SaveChangesAsync(ct);
+
+                await _transaction.CommitTransactionAsync(ct);
+
+                return await _queries.GetByIdAsync(
+                order.Id,
+                _user.UserId,
+                _user.AnonymousId,
+                ct)
+                ?? throw new NotFoundException(
+                    "The order could not be found.");
+            }
+            catch
+            {
+                await _transaction.RollbackTransactionAsync(CancellationToken.None);
+
+                throw;
+            }
         }
-        order.Status = OrderStatus.Cancelled;
 
-        await _context.SaveChangesAsync(ct);
+        private void ValidateCurrentUser()
+        {
+            if (string.IsNullOrWhiteSpace(_user.UserId) && _user.AnonymousId is null)
+                throw new BusinessRuleException(
+                    "A user or anonymous session is required.");
 
-        return await _context.Orders
-            .Where(o => o.Id == order.Id)
-            .ToOrderDto()
-            .FirstAsync(ct);
+            if (!string.IsNullOrWhiteSpace(_user.UserId) && _user.AnonymousId is not null)
+                throw new BusinessRuleException(
+                    "An order cannot belong to both a user and an anonymous session.");
+        }
     }
 }

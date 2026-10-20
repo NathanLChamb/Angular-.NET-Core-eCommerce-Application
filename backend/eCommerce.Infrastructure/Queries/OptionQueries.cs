@@ -1,24 +1,26 @@
 ﻿using eCommerce.Application.Features.Options.DTOs;
 using eCommerce.Application.Interfaces.Queries;
 using eCommerce.Application.Shared;
+using eCommerce.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
-namespace eCommerce.Infrastructure.Persistence.Queries
+namespace eCommerce.Infrastructure.Queries
 {
-    public class OptionQueries : IOptionQueries
+    public class OptionQueries(
+        eCommerceContext context) 
+        : IOptionQueries
     {
-        private readonly eCommerceContext _context;
-        public OptionQueries(eCommerceContext context)
-        {
-            _context = context;
-        }
-        public async Task<PagedResult<OptionResponse>> GetPagedAsync(PaginationParams pageParams, CancellationToken ct)
+        private readonly eCommerceContext _context = context;
+
+        public async Task<PagedResult<OptionResponse>> GetPagedAsync(
+            PaginationParams pageParams, 
+            CancellationToken ct)
         {
             var query = _context.Options
                 .AsNoTracking()
                 .OrderBy(o => o.Id);
 
-            var totalCount = await query.CountAsync();
+            var totalCount = await query.CountAsync(ct);
 
             var items = await query
                 .Skip((pageParams.PageNumber - 1) * pageParams.PageSize)
@@ -32,7 +34,7 @@ namespace eCommerce.Infrastructure.Persistence.Queries
                         Id = ov.Id,
                         Value = ov.Value
                     }).ToList()
-                }).ToListAsync();
+                }).ToListAsync(ct);
 
             return new PagedResult<OptionResponse>
             {
@@ -43,7 +45,9 @@ namespace eCommerce.Infrastructure.Persistence.Queries
             };
         }
 
-        public async Task<OptionResponse?> GetByIdAsync(int id, CancellationToken ct)
+        public async Task<OptionResponse?> GetByIdAsync(
+            int id, 
+            CancellationToken ct)
         {
             return await _context.Options
                 .AsNoTracking()
@@ -58,7 +62,7 @@ namespace eCommerce.Infrastructure.Persistence.Queries
                         Value = ov.Value
                     }).ToList()
                 })
-                .FirstOrDefaultAsync();
+                .FirstOrDefaultAsync(ct);
         }
     }
 }

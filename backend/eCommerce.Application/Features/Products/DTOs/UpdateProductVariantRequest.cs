@@ -6,6 +6,7 @@
         public required string Sku { get; set; }
         public decimal Price { get; set; }
         public int StockQuantity { get; set; }
-        public List<int> OptionValueIds { get; set; } = new();
+        public List<int> OptionValueIds { get; set; } = [];
+        public List<UpdatePictureRequest> Pictures { get; set; } = [];
     }
 }

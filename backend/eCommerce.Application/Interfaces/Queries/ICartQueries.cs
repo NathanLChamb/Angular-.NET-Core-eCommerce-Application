@@ -4,6 +4,9 @@ namespace eCommerce.Application.Interfaces.Queries
 {
     public interface ICartQueries
     {
-        Task<ReadCartDto?> GetByIdAsync(int cartId, CancellationToken ct);
+        Task<CartResponse?> GetCartDetailsAsync(
+            string? userId,
+            Guid? anonymousId,
+            CancellationToken ct);
     }
 }

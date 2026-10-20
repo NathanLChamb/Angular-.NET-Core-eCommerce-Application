@@ -1,21 +1,33 @@
 ﻿using eCommerce.Domain.Catalog.Options;
 using eCommerce.Domain.Catalog.ProductVariants.ProductVariantValueObjects;
+using eCommerce.Domain.Catalog.ProductVariants.ValueObjects;
 
 namespace eCommerce.Domain.Catalog.ProductVariants
 {
     public class ProductVariant
     {
-        private readonly List<OptionValue> _optionValues = new();
+        private readonly List<OptionValue> _optionValues = [];
+        private readonly List<Picture> _pictures = [];
         public int Id { get; private set; }
         public uint Version { get; set; }
-        public ProductVariantSku Sku { get; private set; }
+        public Sku Sku { get; private set; }
         public StockQuantity StockQuantity { get; private set; }
-        public Money? Price { get; private set; }
+        public Price? Price { get; private set; }
         public IReadOnlyCollection<OptionValue> OptionValues => _optionValues;
-        public ProductVariant(ProductVariantSku sku)
+        public IReadOnlyList<Picture> Pictures => _pictures;
+        public ProductVariant(Sku sku, Price price, StockQuantity stockQuantity,
+            IEnumerable<OptionValue> optionValues, IEnumerable<Picture> pictures)
         {
             Sku = sku;
-            StockQuantity = new StockQuantity(0);
+            Price = price;
+            StockQuantity = stockQuantity;
+
+            foreach (var optionValue in optionValues)
+            {
+                AddOptionValue(optionValue);
+            }
+
+            _pictures.AddRange(pictures);
         }
         private ProductVariant() { }
 
@@ -51,14 +63,36 @@ namespace eCommerce.Domain.Catalog.ProductVariants
         {
             StockQuantity = StockQuantity.Subtract(quantity);
         }
-        public void SetPrice(Money price)
+        public void SetPrice(Price price)
         {
             Price = price;
         }
 
-        public void ChangeSku(ProductVariantSku sku)
+        public void ChangeSku(Sku sku)
         {
             Sku = sku;
+        }
+
+        public void AddPicture(Picture picture)
+        {
+            _pictures.Add(picture);
+        }
+
+        public void Update(Sku sku, Price price, StockQuantity stockQuantity,
+            IEnumerable<OptionValue> optionValues, IEnumerable<Picture> pictures)
+        {
+            Sku = sku;
+            Price = price;
+            StockQuantity = stockQuantity;
+
+            _optionValues.Clear();
+            foreach (var optionValue in optionValues)
+            {
+                AddOptionValue(optionValue);
+            }
+
+            _pictures.Clear();
+            _pictures.AddRange(pictures);
         }
     }
 }

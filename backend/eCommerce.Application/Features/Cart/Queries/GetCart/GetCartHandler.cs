@@ -2,44 +2,33 @@
 using eCommerce.Application.Interfaces;
 using eCommerce.Application.Interfaces.Queries;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace eCommerce.Application.Features.Cart.Queries.GetCart
 {
-    public class GetCartHandler : IRequestHandler<GetCartQuery, ReadCartDto>
+    public class GetCartHandler(
+        ICartQueries queries, 
+        ICurrentUser user) 
+        : IRequestHandler<GetCartQuery, CartResponse>
     {
-        private readonly IeCommerceContext _context;
-        private readonly ICartQueries _queries;
+        private readonly ICurrentUser _user = user;
+        private readonly ICartQueries _queries = queries;
 
-        public GetCartHandler(IeCommerceContext context, ICartQueries queries)
+        public async Task<CartResponse> Handle(
+            GetCartQuery request, 
+            CancellationToken ct)
         {
-            _context = context;
-            _queries = queries;
-        }
+            var cart = await _queries.GetCartDetailsAsync(
+                _user.UserId, 
+                _user.AnonymousId, 
+                ct);
 
-        public async Task<ReadCartDto> Handle(GetCartQuery request, CancellationToken ct)
-        {
-            var cartId = await _context.Carts
-            .Where(c => c.UserId == request.UserId)
-            .Select(c => (int?)c.Id)
-            .FirstOrDefaultAsync(ct);
-
-            if (cartId.HasValue)
+            return cart ?? new CartResponse
             {
-                var cart = await _queries.GetByIdAsync(
-                    cartId.Value,
-                    ct);
-
-                if (cart != null)
-                {
-                    return cart;
-                }
-            }
-
-            return new ReadCartDto
-            {
-                Items = new(),
-                TotalPrice = 0
+                Id = 0,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = null,
+                Items = [],
+                Subtotal = 0m
             };
         }
     }

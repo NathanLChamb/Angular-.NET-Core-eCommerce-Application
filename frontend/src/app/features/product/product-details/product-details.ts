@@ -1,7 +1,7 @@
 import { Component, computed, effect, inject, input, signal } from '@angular/core';
 import { ProductService } from '../product-service';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { ProductOptionValueImageDto, ProductSearchFilter, ProductSort, ReadProductVariantDto } from '../models';
+import { ProductSearchFilter, ProductSort } from '../models';
 import { EMPTY } from 'rxjs';
 import { CartService } from '../../cart/cart-service';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -32,6 +32,26 @@ export class ProductDetails {
     pageSize: 5
   });
 
+  protected product = rxResource({
+    params: () => {
+      const id = this.id();
+
+      return id
+        ? { id: Number(id) }
+        : null;
+    },
+
+    stream: ({ params }) => {
+
+      if (!params) {
+        return EMPTY;
+      }
+
+      return this.productService
+        .getProductById(params.id);
+    }
+  });
+
   protected isSelected(
     optionId: number,
     valueId: number
@@ -60,136 +80,55 @@ export class ProductDetails {
     const selected = this.selectedOptions();
 
     return product.productVariants.find(variant => {
+      return product.options.every(option => {
+        const selectedValueId = selected.get(option.id);
 
-      if (variant.optionValues.length !== selected.size) {
-        return false;
-      }
+        if (selectedValueId === undefined) {
+          return false;
+        }
 
-      return variant.optionValues.every(optionValue =>
-        selected.get(optionValue.optionId) === optionValue.id
-      );
-
+        return variant.optionValues.some(
+          optionValue => optionValue.id === selectedValueId
+        );
+      });
     }) ?? null;
   });
-  protected selectedOptionValueImages = computed(() => {
 
-    const variant = this.selectedVariant();
-
-    if (!variant) {
-      return [];
-    }
-
-    const variantOptionValueIds =
-      variant.optionValues.map(v => v.id);
-
-    return (
-      this.product.value()?.productOptionValueImages
-        .filter(image =>
-          image.optionValueIds.every(id =>
-            variantOptionValueIds.includes(id)
-          )
-        )
-        .sort(
-          (a, b) =>
-            a.displayOrder - b.displayOrder
-        ) ?? []
-    );
+  protected selectedVariantPictures = computed(() => {
+    return this.selectedVariant()?.pictures ?? [];
   });
-
-  protected getOptionValues(optionId: number) {
-
-    const product = this.product.value();
-
-    if (!product) {
-      return [];
-    }
-
-    const values = product.productVariants
-      .flatMap(v => v.optionValues)
-      .filter(v => v.optionId === optionId);
-
-    return [
-      ...new Map(
-        values.map(v => [v.id, v])
-      ).values()
-    ];
-  }
-
-  protected getValueImage(
-    optionId: number,
-    valueId: number
-  ) {
-
-    const product = this.product.value();
-
-    if (!product) {
-      return undefined;
-    }
-
-    return product.productOptionValueImages
-      .find(image =>
-        image.optionValueIds.length === 1 &&
-        image.optionValueIds.includes(valueId)
-      )
-      ?.url;
-  }
-
-  protected product = rxResource({
-    params: () => {
-      const id = this.id();
-
-      return id
-        ? { id: Number(id) }
-        : null;
-    },
-
-    stream: ({ params }) => {
-
-      if (!params) {
-        return EMPTY;
-      }
-
-      return this.productService
-        .GetProductById(params.id);
-    }
-  });
-
+  
   constructor() {
-
     effect(() => {
+        const product = this.product.value();
 
-      const product = this.product.value();
+        if (!product || this.selectedOptions().size > 0) {
+          return;
+        }
 
-      if (
-        !product ||
-        this.selectedOptions().size > 0
-      ) {
-        return;
-      }
+        const firstVariant = product.productVariants[0];
 
-      const firstVariant =
-        product.productVariants[0];
+        if (!firstVariant) {
+          return;
+        }
 
-      if (!firstVariant) {
-        return;
-      }
+        const selections = new Map<number, number>();
 
-      const selections =
-        new Map<number, number>();
+        for (const option of product.options) {
+          const value = option.optionValues.find(optionValue =>
+            firstVariant.optionValues.some(
+              variantValue => variantValue.id === optionValue.id
+            )
+          );
 
-      for (
-        const optionValue
-        of firstVariant.optionValues
-      ) {
-        selections.set(
-          optionValue.optionId,
-          optionValue.id
-        );
-      }
+          if (value) {
+            selections.set(option.id, value.id);
+          }
+        }
 
-      this.selectedOptions.set(selections);
-    });
-  }
+        this.selectedOptions.set(selections);
+      });
+    }
 
   protected addToCart(
     productVariantId: number

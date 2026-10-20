@@ -10,38 +10,52 @@ namespace eCommerce.Infrastructure.Persistence.Configurations
         {
             builder.HasKey(o => o.Id);
 
-            builder.HasIndex(o => o.UserId);
-            builder.HasIndex(o => o.OrderNumber)
-                .IsUnique();
+            builder.OwnsOne(o => o.OrderNumber, orderNumber =>
+            {
+                orderNumber.Property(on => on.Value)
+                    .HasColumnName("OrderNumber")
+                    .HasMaxLength(32)
+                    .IsRequired();
 
-            builder.Property(o => o.OrderNumber)
-                .IsRequired()
-                .HasMaxLength(50);
+                orderNumber.HasIndex(on => on.Value)
+                    .IsUnique();
+            });
 
             builder.Property(o => o.UserId)
-                .IsRequired()
                 .HasMaxLength(450);
 
-            builder.Property(o => o.TotalPrice)
-                .HasPrecision(18, 2)
-                .IsRequired();
+            builder.Property(o => o.AnonymousId);
 
-            builder.Property(o => o.ShippingAddress)
-                .IsRequired()
-                .HasMaxLength(500);
+            builder.OwnsOne(o => o.ShippingAddress, shippingAddress =>
+            {
+                shippingAddress.Property(sa => sa.Value)
+                .HasMaxLength(500)
+                .IsRequired();
+            });
+
+            builder.Property(o => o.Status)
+                .HasConversion<int>()
+                .IsRequired();
 
             builder.Property(o => o.OrderDate)
                 .IsRequired();
 
-            builder.Property(o => o.Status)
-                .HasConversion<string>()
-                .HasMaxLength(50)
-                .IsRequired();
+            builder.Property(o => o.UpdatedAt);
 
-            builder.HasMany(o => o.OrderItems)
-                .WithOne(oi => oi.Order)
-                .HasForeignKey(oi => oi.OrderId)
+            builder.Ignore(o => o.TotalPrice);
+
+            builder.HasMany(o => o.Items)
+                .WithOne()
+                .HasForeignKey("OrderId")
+                .IsRequired()
                 .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Navigation(o => o.Items)
+                .HasField("_items");
+
+            builder.HasIndex(o => o.UserId);
+
+            builder.HasIndex(o => o.AnonymousId);
         }
     }
 }

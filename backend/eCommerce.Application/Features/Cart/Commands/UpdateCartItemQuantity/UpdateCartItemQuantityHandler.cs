@@ -2,80 +2,39 @@
 using eCommerce.Application.Features.Cart.DTOs;
 using eCommerce.Application.Interfaces;
 using eCommerce.Application.Interfaces.Queries;
+using eCommerce.Application.Interfaces.Repositories;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace eCommerce.Application.Features.Cart.Commands.UpdateCartItemQuantity
 {
-    public class UpdateCartItemQuantityHandler : IRequestHandler<UpdateCartItemQuantityCommand, ReadCartDto>
+    public class UpdateCartItemQuantityHandler(
+        ICartRepository carts, 
+        ICartQueries queries, 
+        ICurrentUser user, 
+        IUnitOfWork unitOfWork) 
+        : IRequestHandler<UpdateCartItemQuantityCommand, CartResponse>
     {
-        private readonly IeCommerceContext _context;
-        private readonly ICartQueries _queries;
+        private readonly ICartRepository _carts = carts;
+        private readonly ICartQueries _queries = queries;
+        private readonly ICurrentUser _user = user;
+        private readonly IUnitOfWork _unitOfWork = unitOfWork;
 
-        public UpdateCartItemQuantityHandler(IeCommerceContext context, ICartQueries queries)
-        {
-            _context = context;
-            _queries = queries;
-        }
-
-        public async Task<ReadCartDto> Handle(
+        public async Task<CartResponse> Handle(
             UpdateCartItemQuantityCommand request,
             CancellationToken ct)
         {
-            if (request.Quantity <= 0)
-            {
-                throw new BusinessRuleException(
-                    "Quantity must be greater than zero.");
-            }
+            var cart = await _carts.GetAsync(
+                _user.UserId, _user.AnonymousId, ct)
+                ?? throw new NotFoundException(
+                    "Cart not found from provided ID");
 
-            var cart = await _context.Carts
-                .Include(c => c.Items)
-                .FirstOrDefaultAsync(c => c.UserId == request.UserId, ct);
+            cart.UpdateItem(request.ProductVariantId, request.Quantity);
 
-            if (cart == null)
-            {
-                throw new NotFoundException("Cart not found.");
-            }
+            await _unitOfWork.SaveChangesAsync(ct);
 
-            var item = cart.Items
-                .FirstOrDefault(i =>
-                    i.ProductVariantId == request.ProductVariantId);
-
-            if (item == null)
-            {
-                throw new NotFoundException("Cart item not found.");
-            }
-
-            var productVariant = await _context.ProductVariants
-                .FirstOrDefaultAsync(
-                    pv => pv.Id == request.ProductVariantId,
-                    ct);
-
-            if (productVariant == null)
-            {
-                throw new NotFoundException("Product variant not found.");
-            }
-
-            if (request.Quantity > productVariant.StockQuantity.Value)
-            {
-                throw new BusinessRuleException("Insufficient stock.");
-            }
-
-            item.Quantity = request.Quantity;
-
-            cart.UpdatedAt = DateTime.UtcNow;
-
-            await _context.SaveChangesAsync(ct);
-
-            var result = await _queries.GetByIdAsync(cart.Id, ct);
-
-            if (result == null)
-            {
-                throw new NotFoundException(
-                    "Cart could not be loaded after updating the item.");
-            }
-
-            return result;
+            return await _queries.GetCartDetailsAsync(_user.UserId, _user.AnonymousId, ct)
+                ?? throw new InvalidOperationException(
+                    "Cart not found");
         }
     }
 }

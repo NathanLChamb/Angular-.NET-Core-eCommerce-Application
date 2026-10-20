@@ -1,10 +1,10 @@
-import { Component, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { ProductService } from '../../product/product-service';
 import { CartService } from '../../cart/cart-service';
 import { RouterLink } from '@angular/router';
 import { ProductFilterService } from '../../product/product-filter-service';
-import { ReadProductDto } from '../../product/models';
+import { PictureResponse, ProductResponse } from '../../product/models';
 
 @Component({
   selector: 'app-home',
@@ -19,23 +19,11 @@ export class Home {
 
   protected products = rxResource({
     params: () => this.filterService.filter(),
-    stream: ({ params }) => this.productService.GetAllProducts(params)
+    stream: ({ params }) => this.productService.getAllProducts(params)
   });
 
-  protected getDefaultImage(product: ReadProductDto): string | null {
-    const images = product.productOptionValueImages ?? [];
-
-    if (!images.length) {
-      return null;
-    }
-
-    return [...images]
-      .sort((a, b) => {
-        if (a.optionValueIds.length !== b.optionValueIds.length) {
-          return a.optionValueIds.length - b.optionValueIds.length;
-        }
-        return a.displayOrder - b.displayOrder;
-      })[0]?.url ?? null;
+  protected getProductImage(product: ProductResponse): PictureResponse | null {
+    return product.productVariants[0].pictures[0] ?? null;
   }
 
   addToCart(productVariantId: number) {
@@ -45,6 +33,17 @@ export class Home {
       })
       .subscribe();
   }
+
+  protected pageNumber = computed(
+    () => this.filterService.filter().pageNumber
+  )
+
+  protected totalPages = computed(() => {
+    const data = this.products.value()
+    if (!data) return 0
+
+    return Math.ceil(data.totalCount / this.filterService.filter().pageSize)
+  })
 
   protected previousPage() {
     this.filterService.filter.update(f => ({

@@ -1,12 +1,9 @@
-﻿using eCommerce.Domain.Catalog.Products;
-
-namespace eCommerce.Domain.Catalog.Options
+﻿namespace eCommerce.Domain.Catalog.Options
 {
     public class OptionValue
     {
         public int Id { get; private set; }
         public string Value { get; private set; }
-        public List<ProductOptionValueImageOptionValue> ProductOptionValues { get; set; } = new();
         public OptionValueStatus Status { get; private set; }
         public OptionValue(string value)
         {

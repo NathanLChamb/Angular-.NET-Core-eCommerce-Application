@@ -15,7 +15,7 @@
             }
     </div>
     <div formArrayName="optionValues">
-        @for (group of optionValues.controls; track group.controls.id.value; let i = $index) {
+        @for (group of optionValues.controls; track $index; let i = $index) {
             @let optionValue = group.controls.value;
             <div [formGroupName]="i">
                 <input type="hidden" formControlName="id" />

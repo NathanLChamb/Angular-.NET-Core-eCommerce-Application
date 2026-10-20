@@ -1,31 +1,41 @@
-﻿using eCommerce.Application.Features.Orders.DTOs;
-using eCommerce.Application.Features.Orders.Mappings;
+﻿using eCommerce.Application.Exceptions;
+using eCommerce.Application.Features.Orders.DTOs;
 using eCommerce.Application.Interfaces;
+using eCommerce.Application.Interfaces.Queries;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace eCommerce.Application.Features.Orders.Queries.GetOrderById
 {
-    public class GetOrderByIdHandler
-        : IRequestHandler<GetOrderByIdQuery, ReadOrderDto?>
+    public class GetOrderByIdHandler(
+        IOrderQueries queries, 
+        ICurrentUser user)
+        : IRequestHandler<GetOrderByIdQuery, OrderResponse?>
     {
-        private readonly IeCommerceContext _context;
+        private readonly IOrderQueries _queries = queries;
+        private readonly ICurrentUser _user = user;
 
-        public GetOrderByIdHandler(IeCommerceContext context)
-        {
-            _context = context;
-        }
-
-        public async Task<ReadOrderDto?> Handle(
+        public async Task<OrderResponse?> Handle(
             GetOrderByIdQuery request,
             CancellationToken ct)
         {
-            return await _context.Orders
-                .Where(o =>
-                    o.Id == request.OrderId &&
-                    o.UserId == request.UserId)
-                .ToOrderDto()
-                .FirstOrDefaultAsync(ct);
+            ValidateCurrentUser();
+
+            return await _queries.GetByIdAsync(
+                request.OrderId, 
+                _user.UserId, 
+                _user.AnonymousId, 
+                ct);
+        }
+
+        private void ValidateCurrentUser()
+        {
+            if (string.IsNullOrWhiteSpace(_user.UserId) && _user.AnonymousId is null)
+                throw new BusinessRuleException(
+                    "A user or anonymous session is required.");
+
+            if (!string.IsNullOrWhiteSpace(_user.UserId) && _user.AnonymousId is not null)
+                throw new BusinessRuleException(
+                    "An order cannot belong to both a user and an anonymous session.");
         }
     }
 }

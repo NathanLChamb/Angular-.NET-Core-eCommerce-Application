@@ -2,97 +2,49 @@
 using eCommerce.Application.Features.Cart.DTOs;
 using eCommerce.Application.Interfaces;
 using eCommerce.Application.Interfaces.Queries;
+using eCommerce.Application.Interfaces.Repositories;
+using eCommerce.Domain.Carts.ValueObjects;
+using eCommerce.Domain.Catalog.ProductVariants.ValueObjects;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace eCommerce.Application.Features.Cart.Commands.AddCartItem
 {
-    public class AddCartItemHandler : IRequestHandler<AddCartItemCommand, ReadCartDto>
+    public class AddCartItemHandler(
+        ICartRepository carts, 
+        ICartQueries queries, 
+        IProductQueries productQueries, 
+        ICurrentUser user, 
+        IUnitOfWork unitOfWork) 
+        : IRequestHandler<AddCartItemCommand, CartResponse>
     {
-        private readonly IeCommerceContext _context;
-        private readonly ICartQueries _queries;
-        public AddCartItemHandler(IeCommerceContext context, ICartQueries queries)
+        private readonly ICartRepository _carts = carts;
+        private readonly ICartQueries _queries = queries;
+        private readonly IProductQueries _productQueries = productQueries;
+        private readonly ICurrentUser _user = user;
+        private readonly IUnitOfWork _unitOfWork = unitOfWork;
+
+        public async Task<CartResponse> Handle(AddCartItemCommand request, CancellationToken ct)
         {
-            _context = context;
-            _queries = queries;
-        }
+            var product = await _productQueries.GetVariantDetailsAsync(request.ProductVariantId, ct)
+                ?? throw new NotFoundException(
+                    "Product variant not found.");
 
-        public async Task<ReadCartDto> Handle(AddCartItemCommand request, CancellationToken ct)
-        {
-            if (request.Quantity <= 0)
-            {
-                throw new BusinessRuleException(
-                    "Quantity must be greater than zero.");
-            }
-
-            var cart = await _context.Carts
-                .Include(c => c.Items)
-                .FirstOrDefaultAsync(
-                    c => c.UserId == request.UserId,
-                    ct);
-
+            var cart = await _carts.GetAsync(_user.UserId, _user.AnonymousId, ct);
             if (cart == null)
             {
-                cart = new Domain.Cart.Cart
-                {
-                    UserId = request.UserId
-                };
-
-                _context.Carts.Add(cart);
+                
+                cart = new Domain.Carts.Cart(_user.UserId, _user.AnonymousId);
+                await _carts.AddAsync(cart, ct);
             }
 
-            var productVariant = await _context.ProductVariants
-                .FirstOrDefaultAsync(
-                    pv => pv.Id == request.ProductVariantId,
-                    ct);
+            var snapshot = new ProductSnapshot(product.ProductName, product.Sku, product.ImageUrl);
 
-            if (productVariant == null)
-            {
-                throw new NotFoundException(
-                    "Product variant not found.");
-            }
+            cart.AddItem(request.ProductVariantId, snapshot, request.Quantity, new Price(product.UnitPrice));
 
-            var existingItem = cart.Items
-                .FirstOrDefault(
-                    i => i.ProductVariantId == request.ProductVariantId);
+            await _unitOfWork.SaveChangesAsync(ct);
 
-            var newQuantity = existingItem == null
-                ? request.Quantity
-                : existingItem.Quantity + request.Quantity;
-
-            if (newQuantity > productVariant.StockQuantity.Value)
-            {
-                throw new BusinessRuleException(
-                    "Insufficient stock.");
-            }
-
-            if (existingItem != null)
-            {
-                existingItem.Quantity += request.Quantity;
-            }
-            else
-            {
-                cart.Items.Add(new Domain.Cart.CartItem
-                {
-                    ProductVariantId = productVariant.Id,
-                    ProductVariant = productVariant,
-                    Quantity = request.Quantity
-                });
-            }
-
-            cart.UpdatedAt = DateTime.UtcNow;
-
-            await _context.SaveChangesAsync(ct);
-
-            var result = await _queries.GetByIdAsync(cart.Id, ct);
-
-            if (result == null)
-            {
-                throw new NotFoundException(
-                    "Cart could not be loaded after adding the item.");
-            }
-
-            return result;
+            return await _queries.GetCartDetailsAsync(_user.UserId, _user.AnonymousId, ct)
+                ?? throw new InvalidOperationException("Cart not found");
         }
     }
 }

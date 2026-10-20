@@ -54,8 +54,6 @@
                             @for (option of product.options; track option.id) {
                                 {{ option.name }}{{ !$last ? ', ' : '' }}
                             }</td>   
-                        <td headers="hdr_created" data-label="Created">{{product.createdAt | date:'short'}}</td>
-                        <td headers="hdr_updated" data-label="Updated">{{product.updatedAt | date:'short'}}</td>
                         <td headers="hdr_actions" data-label="Actions">
                             <div>
                                 <button type="button" [routerLink]="['edit', product.id]">Edit</button>

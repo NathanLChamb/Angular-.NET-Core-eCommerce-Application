@@ -4,7 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { PaginationParams } from '../../shared/models/pagination-params';
 import { Observable } from 'rxjs';
 import { PagedResult } from '../../shared/models/paged-result';
-import { CreateOptionDto, ReadOptionDto, UpdateOptionDto } from './models';
+import { CreateOptionRequest, OptionResponse, UpdateOptionRequest } from './models';
 
 @Injectable({
   providedIn: 'root',
@@ -13,8 +13,8 @@ export class OptionService {
   private apiUrl = `${Environment.apiBaseUrl}/option`
   private http = inject(HttpClient)
 
-  public GetAllOptions(params: PaginationParams): Observable<PagedResult<ReadOptionDto>> {
-    return this.http.get<PagedResult<ReadOptionDto>>(this.apiUrl, {
+  public getAllOptions(params: PaginationParams): Observable<PagedResult<OptionResponse>> {
+    return this.http.get<PagedResult<OptionResponse>>(this.apiUrl, {
       params: {
         pageNumber: params.pageNumber,
         pageSize: params.pageSize
@@ -22,19 +22,19 @@ export class OptionService {
     })
   }
 
-  public GetOptionById(id: number): Observable<ReadOptionDto> {
-    return this.http.get<ReadOptionDto>(`${this.apiUrl}/${id}`)
+  public getOptionById(id: number): Observable<OptionResponse> {
+    return this.http.get<OptionResponse>(`${this.apiUrl}/${id}`)
   }
 
-  public CreateOption(dto: CreateOptionDto): Observable<ReadOptionDto> {
-    return this.http.post<ReadOptionDto>(this.apiUrl, dto)
+  public createOption(dto: CreateOptionRequest): Observable<OptionResponse> {
+    return this.http.post<OptionResponse>(this.apiUrl, dto)
   }
 
-  public UpdateOption(id: number, dto: UpdateOptionDto): Observable<void> {
+  public updateOption(id: number, dto: UpdateOptionRequest): Observable<void> {
     return this.http.put<void>(`${this.apiUrl}/${id}`, dto)
   }
 
-  public DeleteOption(id: number): Observable<void> {
+  public deleteOption(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`)
   }
 }

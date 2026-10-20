@@ -1,127 +1,125 @@
 ﻿using eCommerce.Application.Common.Constants;
 using Microsoft.AspNetCore.Identity;
 
-namespace eCommerce.Infrastructure.Identity;
-
-public class IdentitySeeder
+namespace eCommerce.Infrastructure.Identity
 {
-    private readonly RoleManager<IdentityRole> _roleManager;
-    private readonly UserManager<ApplicationUser> _userManager;
-    public IdentitySeeder(RoleManager<IdentityRole> roleManager, UserManager<ApplicationUser> userManager)
+    public class IdentitySeeder(
+        RoleManager<IdentityRole> roleManager,
+        UserManager<ApplicationUser> userManager)
     {
-        _roleManager = roleManager;
-        _userManager = userManager;
-    }
-    public async Task SeedAsync()
-    {
-        await SeedRolesAsync();
-        await SeedCustomerUserAsync();
-        await SeedAdminUserAsync();
-    }
-    private async Task SeedRolesAsync()
-    {
-        var roles = new[]
+        private readonly RoleManager<IdentityRole> _roleManager = roleManager;
+        private readonly UserManager<ApplicationUser> _userManager = userManager;
+        public async Task SeedAsync()
         {
+            await SeedRolesAsync();
+            await SeedCustomerUserAsync();
+            await SeedAdminUserAsync();
+        }
+        private async Task SeedRolesAsync()
+        {
+            var roles = new[]
+            {
             Roles.Admin,
             Roles.Customer
         };
 
-        foreach (var role in roles)
-        {
-            if (!await _roleManager.RoleExistsAsync(role))
+            foreach (var role in roles)
             {
-                var result = await _roleManager.CreateAsync(new IdentityRole(role));
-                if (!result.Succeeded)
+                if (!await _roleManager.RoleExistsAsync(role))
                 {
-                    var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-                    throw new Exception($"Failed creating role {role}: {errors}");
+                    var result = await _roleManager.CreateAsync(new IdentityRole(role));
+                    if (!result.Succeeded)
+                    {
+                        var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                        throw new Exception($"Failed creating role {role}: {errors}");
+                    }
                 }
             }
         }
-    }
-    private async Task SeedCustomerUserAsync()
-    {
-        const string userEmail = "test@example.com";
-        const string userPassword = "Customer123!";
-
-        var user = await _userManager.FindByEmailAsync(userEmail);
-
-        if (user != null)
+        private async Task SeedCustomerUserAsync()
         {
-            if (!await _userManager.IsInRoleAsync(user, Roles.Customer))
-            {
-                var roleResult = await _userManager.AddToRoleAsync(user, Roles.Customer);
+            const string userEmail = "test@example.com";
+            const string userPassword = "Customer123!";
 
-                if (!roleResult.Succeeded)
+            var user = await _userManager.FindByEmailAsync(userEmail);
+
+            if (user != null)
+            {
+                if (!await _userManager.IsInRoleAsync(user, Roles.Customer))
                 {
-                    var errors = string.Join(", ", roleResult.Errors.Select(e => e.Description));
-                    throw new Exception($"Failed assigning customer role: {errors}");
+                    var roleResult = await _userManager.AddToRoleAsync(user, Roles.Customer);
+
+                    if (!roleResult.Succeeded)
+                    {
+                        var errors = string.Join(", ", roleResult.Errors.Select(e => e.Description));
+                        throw new Exception($"Failed assigning customer role: {errors}");
+                    }
                 }
+
+                return;
             }
 
-            return;
-        }
-
-        user = new ApplicationUser
-        {
-            UserName = userEmail,
-            Email = userEmail,
-            DisplayName = "Test Customer"
-        };
-
-        var createResult = await _userManager.CreateAsync(user, userPassword);
-
-        if (!createResult.Succeeded)
-        {
-            var errors = string.Join(", ", createResult.Errors.Select(e => e.Description));
-            throw new Exception($"Failed creating customer user: {errors}");
-        }
-
-        var addRoleResult = await _userManager.AddToRoleAsync(user, Roles.Customer);
-
-        if (!addRoleResult.Succeeded)
-        {
-            var errors = string.Join(", ", addRoleResult.Errors.Select(e => e.Description));
-            throw new Exception($"Failed assigning customer role: {errors}");
-        }
-    }
-    private async Task SeedAdminUserAsync()
-    {
-        const string adminEmail = "admin@ecommerce.com";
-        const string adminPassword = "Admin123!";
-
-        var admin = await _userManager.FindByEmailAsync(adminEmail);
-
-        if (admin != null)
-        {
-            if (!await _userManager.IsInRoleAsync(admin, Roles.Admin))
+            user = new ApplicationUser
             {
-                await _userManager.AddToRoleAsync(admin, Roles.Admin);
+                UserName = userEmail,
+                Email = userEmail,
+                DisplayName = "Test Customer"
+            };
+
+            var createResult = await _userManager.CreateAsync(user, userPassword);
+
+            if (!createResult.Succeeded)
+            {
+                var errors = string.Join(", ", createResult.Errors.Select(e => e.Description));
+                throw new Exception($"Failed creating customer user: {errors}");
             }
-            return;
+
+            var addRoleResult = await _userManager.AddToRoleAsync(user, Roles.Customer);
+
+            if (!addRoleResult.Succeeded)
+            {
+                var errors = string.Join(", ", addRoleResult.Errors.Select(e => e.Description));
+                throw new Exception($"Failed assigning customer role: {errors}");
+            }
         }
-
-        admin = new ApplicationUser
+        private async Task SeedAdminUserAsync()
         {
-            UserName = adminEmail,
-            Email = adminEmail,
-            DisplayName = "Administrator"
-        };
+            const string adminEmail = "admin@ecommerce.com";
+            const string adminPassword = "Admin123!";
 
-        var createResult = await _userManager.CreateAsync(admin, adminPassword);
+            var admin = await _userManager.FindByEmailAsync(adminEmail);
 
-        if (!createResult.Succeeded)
-        {
-            var errors = string.Join(", ", createResult.Errors.Select(e => e.Description));
-            throw new Exception($"Failed creating admin user: {errors}");
-        }
+            if (admin != null)
+            {
+                if (!await _userManager.IsInRoleAsync(admin, Roles.Admin))
+                {
+                    await _userManager.AddToRoleAsync(admin, Roles.Admin);
+                }
+                return;
+            }
 
-        var roleResult = await _userManager.AddToRoleAsync(admin, Roles.Admin);
+            admin = new ApplicationUser
+            {
+                UserName = adminEmail,
+                Email = adminEmail,
+                DisplayName = "Administrator"
+            };
 
-        if (!roleResult.Succeeded)
-        {
-            var errors = string.Join(", ", roleResult.Errors.Select(e => e.Description));
-            throw new Exception($"Failed assigning admin role: {errors}");
+            var createResult = await _userManager.CreateAsync(admin, adminPassword);
+
+            if (!createResult.Succeeded)
+            {
+                var errors = string.Join(", ", createResult.Errors.Select(e => e.Description));
+                throw new Exception($"Failed creating admin user: {errors}");
+            }
+
+            var roleResult = await _userManager.AddToRoleAsync(admin, Roles.Admin);
+
+            if (!roleResult.Succeeded)
+            {
+                var errors = string.Join(", ", roleResult.Errors.Select(e => e.Description));
+                throw new Exception($"Failed assigning admin role: {errors}");
+            }
         }
     }
 }

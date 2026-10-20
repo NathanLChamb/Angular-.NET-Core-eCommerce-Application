@@ -3,7 +3,7 @@ import { Environment } from '../../../environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { PagedResult } from '../../shared/models/paged-result';
-import { AddProductOptionValueImageDto, CreateProductDto, ProductOptionValueImageDto, ProductSearchFilter, ReadProductDto, UpdateProductDto, UpdateProductOptionValueImageDto } from './models';
+import { CreateProductDto, ProductResponse, ProductSearchFilter, UpdateProductDto } from './models';
 
 @Injectable({
   providedIn: 'root',
@@ -12,9 +12,8 @@ export class ProductService {
   private apiUrl = `${Environment.apiBaseUrl}/product`
   private http = inject(HttpClient)
 
-  public GetAllProducts(params: ProductSearchFilter): Observable<PagedResult<ReadProductDto>> {
-    console.log('service received:', params);
-    return this.http.get<PagedResult<ReadProductDto>>(this.apiUrl, {
+  public getAllProducts(params: ProductSearchFilter): Observable<PagedResult<ProductResponse>> {
+    return this.http.get<PagedResult<ProductResponse>>(this.apiUrl, {
       params: {
         search: params.search ?? '',
         CategoryIds: params.categoryIds,
@@ -26,31 +25,19 @@ export class ProductService {
     })
   }
 
-  public GetProductById(id: number): Observable<ReadProductDto> {
-    return this.http.get<ReadProductDto>(`${this.apiUrl}/${id}`)
+  public getProductById(id: number): Observable<ProductResponse> {
+    return this.http.get<ProductResponse>(`${this.apiUrl}/${id}`)
   }
 
-  public CreateProduct(dto: CreateProductDto): Observable<ReadProductDto> {
-    return this.http.post<ReadProductDto>(this.apiUrl, dto)
+  public createProduct(dto: CreateProductDto): Observable<ProductResponse> {
+    return this.http.post<ProductResponse>(this.apiUrl, dto)
   }
 
-  public UpdateProduct(id: number, dto: UpdateProductDto): Observable<void> {
+  public updateProduct(id: number, dto: UpdateProductDto): Observable<void> {
     return this.http.put<void>(`${this.apiUrl}/${id}`, dto)
   }
 
-  public DeleteProduct(id: number): Observable<void> {
+  public deleteProduct(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`)
-  }
-
-  public AddProductOptionValueImage(productId: number, dto: AddProductOptionValueImageDto): Observable<ProductOptionValueImageDto> {
-    return this.http.post<ProductOptionValueImageDto>(`${this.apiUrl}/${productId}/option-value-images`, dto);
-  }
-
-  public UpdateProductOptionValueImage(productId: number, imageId: number, dto: UpdateProductOptionValueImageDto): Observable<ProductOptionValueImageDto> {
-    return this.http.put<ProductOptionValueImageDto>(`${this.apiUrl}/${productId}/option-value-images/${imageId}`, dto);
-  }
-
-  public DeleteProductOptionValueImage(productId: number, imageId: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${productId}/option-value-images/${imageId}`);
   }
 }

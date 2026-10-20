@@ -6,14 +6,14 @@ import { Router } from '@angular/router';
 import { FormArray, FormBuilder, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { rxResource, toSignal } from '@angular/core/rxjs-interop';
 import { catchError, EMPTY, finalize, startWith, tap } from 'rxjs';
-import { ReadProductDto } from '../models';
-import { ProductImages } from '../product-images/product-images';
+import { PictureResponse, ProductResponse } from '../models';
 
 type ProductFormGroup = FormGroup<{
   name: FormControl<string>;
   description: FormControl<string>;
   categoryIds: FormControl<number[]>;
   optionIds: FormControl<number[]>;
+  optionValueIds: FormControl<number[]>
   productVariants: FormArray<ProductVariantForm>;
 }>
 type ProductVariantForm = FormGroup<{
@@ -22,13 +22,18 @@ type ProductVariantForm = FormGroup<{
   price: FormControl<number>;
   stockQuantity: FormControl<number>;
   optionValueIds: FormControl<number[]>;
+  pictures: FormArray<PictureForm>;
 }>
+type PictureForm = FormGroup<{
+  role: FormControl<string>;
+  location: FormControl<string>;
+}>;
 type VariantCombination = {
   optionValueIds: number[]
 }
 @Component({
   selector: 'app-product-form',
-  imports: [ReactiveFormsModule, ProductImages],
+  imports: [ReactiveFormsModule],
   templateUrl: './product-form.html',
   styleUrl: './product-form.css',
 })
@@ -56,6 +61,7 @@ export class ProductForm {
     description: this.fb.nonNullable.control(''),
     categoryIds: this.fb.nonNullable.control<number[]>([]),
     optionIds: this.fb.nonNullable.control<number[]>([]),
+    optionValueIds: this.fb.nonNullable.control<number[]>([]),
     productVariants: this.fb.array<ProductVariantForm>([])
   })
 
@@ -68,7 +74,7 @@ export class ProductForm {
       if (!params) return EMPTY
       this.form.disable()
 
-      return this.productService.GetProductById(params.id).pipe(
+      return this.productService.getProductById(params.id).pipe(
         tap(product => {
           this.isSeeding = true
           try { 
@@ -76,12 +82,6 @@ export class ProductForm {
           } finally { 
             this.isSeeding = false 
           }
-        }),
-        catchError(error => {
-          if (error.status === 404) {
-            this.router.navigate(['/product'])
-          }
-          return EMPTY
         }),
         finalize(() => this.form.enable())
       )
@@ -93,7 +93,7 @@ export class ProductForm {
       pageNumber: 1,
       pageSize: 100
     }),
-    stream: ({params}) => this.categoryService.GetAllCategories(params)
+    stream: ({params}) => this.categoryService.getAllCategories(params)
   })
 
   protected options = rxResource({
@@ -101,27 +101,87 @@ export class ProductForm {
       pageNumber: 1,
       pageSize: 100
     }),
-    stream: ({params}) => this.optionService.GetAllOptions(params)
+    stream: ({params}) => this.optionService.getAllOptions(params)
   })
 
-  protected seedForm(product: ReadProductDto) {
+  protected selectedOptionValueIds = toSignal(
+    this.form.controls.optionValueIds.valueChanges.pipe(
+      startWith(this.form.controls.optionValueIds.value)
+    ),
+    { initialValue: this.form.controls.optionValueIds.value }
+  );
+
+  toggleOptionValue(valueId: number) {
+    const current = this.form.controls.optionValueIds.value;
+
+    const next = current.includes(valueId)
+      ? current.filter(id => id !== valueId)
+      : [...current, valueId];
+
+    this.form.controls.optionValueIds.setValue(next);
+  }
+
+  protected variants = computed(() => {
+  const selectedValueIds = this.selectedOptionValueIds();
+  const selectedOptions = this.selectedOptions();
+
+  const valueGroups = selectedOptions.map(option =>
+    (option.optionValues ?? []).filter(value =>
+      selectedValueIds.includes(value.id)
+    )
+  );
+
+  // Don't generate variants until every selected option
+  // has at least one selected value.
+  if (valueGroups.some(group => group.length === 0)) {
+    return [];
+  }
+
+  const combinations = this.cartesianProduct(valueGroups);
+
+  return combinations.map(combination => ({
+    optionValueIds: combination.map(value => value.id)
+  }));
+});
+
+  protected seedForm(product: ProductResponse) {
+    const existingValueIds = [
+      ...new Set(
+        product.productVariants.flatMap(variant =>
+          variant.optionValues.map(value => value.id)
+        )
+      )
+    ];
+
     this.form.patchValue({
       name: product.name,
       description: product.description,
       categoryIds: product.categories.map(c => c.id),
-      optionIds: product.options.map(o => o.id)
-    })
+      optionIds: product.options.map(o => o.id),
+      optionValueIds: existingValueIds
+    });
 
-    this.productVariants.clear()
+    this.productVariants.clear();
+
     product.productVariants.forEach(variant => {
-      this.productVariants.push(this.fb.group({
-        id: this.fb.control<number | null>(variant.id),
-        sku: this.fb.nonNullable.control(variant.sku),
-        price: this.fb.nonNullable.control(variant.price),
-        stockQuantity: this.fb.nonNullable.control(variant.stockQuantity),
-        optionValueIds: this.fb.nonNullable.control(variant.optionValues.map(ov => ov.id))
-      }))
-    })
+      this.productVariants.push(
+        this.fb.group({
+          id: this.fb.control<number | null>(variant.id),
+          sku: this.fb.nonNullable.control(variant.sku),
+          price: this.fb.nonNullable.control(variant.price ?? 0),
+          stockQuantity: this.fb.nonNullable.control(variant.stockQuantity),
+          optionValueIds: this.fb.nonNullable.control(variant.optionValues.map(ov => ov.id)),
+          pictures: this.fb.array<PictureForm>(
+            variant.pictures.map(picture =>
+              this.fb.group({
+                role: this.fb.nonNullable.control(picture.role),
+                location: this.fb.nonNullable.control(picture.location)
+              })
+            )
+          )
+        })
+      );
+    });
   }
 
   protected selectedOptionIds = toSignal(
@@ -144,20 +204,6 @@ export class ProductForm {
       ), [[]]
     )
   }
-
-  protected variants = computed(() => {
-    const selectedOptions = this.selectedOptions()
-
-    const valueGroups = selectedOptions.map(
-      option => option.optionValues
-    )
-
-    const combinations = this.cartesianProduct(valueGroups)
-
-    return combinations.map(combination => ({
-      optionValueIds: combination.map(v => v.id)
-    }))
-  })
 
   private syncVariantForm(variants: VariantCombination[]) {
     const existingMap = new Map(
@@ -185,11 +231,10 @@ export class ProductForm {
             sku: this.fb.nonNullable.control(''),
             price: this.fb.nonNullable.control(0),
             stockQuantity: this.fb.nonNullable.control(0),
-            optionValueIds: this.fb.nonNullable.control(
-              variant.optionValueIds
-            )
+            optionValueIds: this.fb.nonNullable.control(variant.optionValueIds),
+            pictures: this.fb.array<PictureForm>([])
           })
-        )
+        );
       }
     }
 
@@ -205,16 +250,6 @@ export class ProductForm {
       const options = this.options.value()
 
       if (!options) return
-
-      const selectedOptionIds =
-        this.form.controls.optionIds.value
-
-      if (
-        selectedOptionIds.length > 0 &&
-        this.variants().length === 0
-      ) {
-        return
-      }
 
       const variants = this.variants()
 
@@ -254,13 +289,28 @@ export class ProductForm {
   }
 
   toggleOption(id: number) {
-    const current = this.form.controls.optionIds.value
+    const current = this.form.controls.optionIds.value;
 
     const next = current.includes(id)
       ? current.filter(x => x !== id)
-      : [...current, id]
+      : [...current, id];
 
-    this.form.controls.optionIds.setValue(next)
+    this.form.controls.optionIds.setValue(next);
+
+    const selectedValueIds = this.form.controls.optionValueIds.value;
+    const allOptions = this.options.value()?.items ?? [];
+
+    const allowedValueIds = new Set(
+      allOptions
+        .filter(option => next.includes(option.id))
+        .flatMap(option =>
+          (option.optionValues ?? []).map(value => value.id)
+        )
+    );
+
+    this.form.controls.optionValueIds.setValue(
+      selectedValueIds.filter(valueId => allowedValueIds.has(valueId))
+    );
   }
 
   optionValueMap = computed(() => {
@@ -274,6 +324,30 @@ export class ProductForm {
 
     return map
   })
+
+  protected addPicture(variant: ProductVariantForm) {
+    variant.controls.pictures.push(
+      this.createPictureForm()
+    );
+  }
+
+  protected removePicture(
+    variant: ProductVariantForm,
+    index: number
+  ) {
+    variant.controls.pictures.removeAt(index);
+  }
+
+  private createPictureForm(picture?: PictureResponse): PictureForm {
+    return this.fb.group({
+      role: this.fb.nonNullable.control(
+        picture?.role ?? ''
+      ),
+      location: this.fb.nonNullable.control(
+        picture?.location ?? ''
+      )
+    });
+  }
 
   protected onSubmit() {
     if (this.form.invalid) return
@@ -291,17 +365,23 @@ export class ProductForm {
           sku: v.sku.trim(),
           price: Number(v.price),
           stockQuantity: Number(v.stockQuantity),
-          optionValueIds: v.optionValueIds
+          optionValueIds: v.optionValueIds,
+          pictures: v.pictures
+            .filter(p => p.role.trim() !== '' && p.location.trim() !== '')
+            .map(p => ({
+              role: p.role.trim(),
+              location: p.location.trim()
+            }))
         }))
     }
 
     if (this.isEditMode()) {
-      this.productService.UpdateProduct(Number(this.id()), dto)
+      this.productService.updateProduct(Number(this.id()), dto)
         .subscribe({
           next: () => this.router.navigate(['/product'])
         })
     } else {
-      this.productService.CreateProduct(dto)
+      this.productService.createProduct(dto)
         .subscribe({
           next: () => this.router.navigate(['/product'])
         })

@@ -1,20 +1,19 @@
 ﻿using eCommerce.Application.Features.Categories.DTOs;
+using eCommerce.Application.Features.Options.DTOs;
 using eCommerce.Application.Features.Products.DTOs;
 using eCommerce.Application.Features.Products.Filters;
-using eCommerce.Application.Features.Products.Images.DTOs;
 using eCommerce.Application.Interfaces.Queries;
 using eCommerce.Application.Shared;
+using eCommerce.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
-namespace eCommerce.Infrastructure.Persistence.Queries
+namespace eCommerce.Infrastructure.Queries
 {
-    public class ProductQueries : IProductQueries
+    public class ProductQueries(
+        eCommerceContext context) 
+        : IProductQueries
     {
-        private readonly eCommerceContext _context;
-        public ProductQueries(eCommerceContext context)
-        {
-            _context = context;
-        }
+        private readonly eCommerceContext _context = context;
 
         public async Task<PagedResult<ProductResponse>> GetPagedAsync(
             ProductSearchFilter filter,
@@ -27,24 +26,26 @@ namespace eCommerce.Infrastructure.Persistence.Queries
             if (!string.IsNullOrWhiteSpace(filter.Search))
             {
                 query = query.Where(p =>
-                    p.Name.Value.ToLower().Contains(filter.Search.ToLower()));
+                    p.Name.Value.Contains(
+                        filter.Search,
+                        StringComparison.OrdinalIgnoreCase));
             }
 
-            if (filter.CategoryIds.Any())
+            if (filter.CategoryIds.Count > 0)
             {
                 query = query.Where(p =>
                     p.Categories.Any(c =>
                         filter.CategoryIds.Contains(c.Id)));
             }
 
-            if (filter.OptionIds.Any())
+            if (filter.OptionIds.Count > 0)
             {
                 query = query.Where(p =>
                     filter.OptionIds.All(optionId =>
                         p.Options.Any(o => o.Id == optionId)));
             }
 
-            if (filter.OptionValueIds.Any())
+            if (filter.OptionValueIds.Count > 0)
             {
                 query = query.Where(p =>
                     p.Variants.Any(v =>
@@ -92,48 +93,35 @@ namespace eCommerce.Infrastructure.Persistence.Queries
                         Id = c.Id,
                         Name = c.Name
                     }).ToList(),
-                    Options = p.Options.Select(o => new ProductOptionResponse
+                    Options = p.Options.Select(o => new OptionResponse
                     {
                         Id = o.Id,
-                        Name = o.Name
+                        Name = o.Name,
+                        OptionValues = o.Values.Select(ov => new OptionValueResponse
+                        {
+                            Id = ov.Id,
+                            Value = ov.Value
+                        }).ToList()
                     }).ToList(),
                     ProductVariants = p.Variants.Select(pv => new ProductVariantResponse
                     {
                         Id = pv.Id,
                         Sku = pv.Sku.Value,
-                        Price = pv.Price!.Amount,
+                        Price = pv.Price.Amount,
                         StockQuantity = pv.StockQuantity.Value,
-
-                        OptionValues = pv.OptionValues
-                            .Select(ov =>
-                                new ProductVariantOptionValueResponse
-                                {
-                                    Id = ov.Id,
-                                    Value = ov.Value,
-                                    OptionId = EF.Property<int>(
-                                        ov,
-                                        "OptionId")
-                                })
-                            .ToList()
-                    }).ToList(),
-                    ProductImages = p.ProductImages.Select(pi => new ProductImageDto
-                    {
-                        Id = pi.Id,
-                        Url = pi.Url,
-                        DisplayOrder = pi.DisplayOrder
-                    }).ToList(),
-                    ProductOptionValueImages = p.ProductOptionValueImages.Select(image => new ProductOptionValueImageDto
-                    {
-                        Id = image.Id,
-                        Url = image.Url,
-                        DisplayOrder = image.DisplayOrder,
-                        IsDefault = image.IsDefault,
-
-                        OptionValueIds = image.OptionValues
-                            .Select(x => x.OptionValueId)
-                            .ToList()
+                        OptionValues = pv.OptionValues.Select(ov => new OptionValueResponse
+                        {
+                            Id = ov.Id,
+                            Value = ov.Value
+                        }).ToList(),
+                        Pictures = pv.Pictures.Select(pc => new PictureResponse
+                        {
+                            Role = pc.Role,
+                            Location = pc.Location.ToString()
+                        }).ToList()
                     }).ToList()
-                }).ToListAsync(ct);
+                })
+                .ToListAsync(ct);
 
             return new PagedResult<ProductResponse>
             {
@@ -144,7 +132,9 @@ namespace eCommerce.Infrastructure.Persistence.Queries
             };
         }
 
-        public async Task<ProductResponse?> GetByIdAsync(int id, CancellationToken ct)
+        public async Task<ProductResponse?> GetByIdAsync(
+            int id, 
+            CancellationToken ct)
         {
             return await _context.Products
                 .AsNoTracking()
@@ -159,45 +149,52 @@ namespace eCommerce.Infrastructure.Persistence.Queries
                         Id = c.Id,
                         Name = c.Name
                     }).ToList(),
-                    Options = p.Options.Select(o => new ProductOptionResponse
+                    Options = p.Options.Select(o => new OptionResponse
                     {
                         Id = o.Id,
-                        Name = o.Name
+                        Name = o.Name,
+                        OptionValues = o.Values.Select(ov => new OptionValueResponse
+                        {
+                            Id = ov.Id,
+                            Value = ov.Value
+                        }).ToList()
                     }).ToList(),
                     ProductVariants = p.Variants.Select(pv => new ProductVariantResponse
                     {
                         Id = pv.Id,
                         Sku = pv.Sku.Value,
-                        Price = pv.Price!.Amount,
+                        Price = pv.Price.Amount,
                         StockQuantity = pv.StockQuantity.Value,
-                        OptionValues = pv.OptionValues.Select(ov => new ProductVariantOptionValueResponse
+                        OptionValues = pv.OptionValues.Select(ov => new OptionValueResponse
                         {
                             Id = ov.Id,
-                            Value = ov.Value,
-                            OptionId = EF.Property<int>(
-                                ov,
-                                "OptionId")
+                            Value = ov.Value
+                        }).ToList(),
+                        Pictures = pv.Pictures.Select(pc => new PictureResponse
+                        {
+                            Role = pc.Role,
+                            Location = pc.Location.ToString()
                         }).ToList()
-                    }).ToList(),
-                    ProductImages = p.ProductImages.Select(pi => new ProductImageDto
-                    {
-                        Id = pi.Id,
-                        Url = pi.Url,
-                        DisplayOrder = pi.DisplayOrder
-                    }).ToList(),
-                    ProductOptionValueImages = p.ProductOptionValueImages.Select(image => new ProductOptionValueImageDto
-                    {
-                        Id = image.Id,
-                        Url = image.Url,
-                        DisplayOrder = image.DisplayOrder,
-                        IsDefault = image.IsDefault,
-
-                        OptionValueIds = image.OptionValues
-                            .Select(x => x.OptionValueId)
-                            .ToList()
                     }).ToList()
                 })
                 .FirstOrDefaultAsync(ct);
+        }
+
+        public async Task<VariantDetailsResponse?> GetVariantDetailsAsync(
+            int productVariantId, 
+            CancellationToken ct)
+        {
+            return await _context.Products
+                .SelectMany(p => p.Variants.Where(v => v.Id == productVariantId),
+                    (p, v) => new VariantDetailsResponse
+                    {
+                        ProductVariantId = v.Id,
+                        ProductName = p.Name.Value,
+                        Sku = v.Sku.Value,
+                        ImageUrl = v.Pictures.Select(pic => pic.Location.ToString()).FirstOrDefault(),
+                        UnitPrice = v.Price.Amount
+                    })
+                    .SingleOrDefaultAsync(ct);
         }
     }
 }

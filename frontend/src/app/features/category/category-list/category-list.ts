@@ -19,7 +19,7 @@ export class CategoryList {
       pageNumber: this.pageNumber(),
       pageSize: this.pageSize()
     }),
-    stream: ({params}) => this.categoryService.GetAllCategories(params)
+    stream: ({params}) => this.categoryService.getAllCategories(params)
   })
 
   protected totalPages = computed(() => {
@@ -42,7 +42,7 @@ export class CategoryList {
   }
 
   handleDelete(id: number) {
-    this.categoryService.DeleteCategory(id).subscribe({
+    this.categoryService.deleteCategory(id).subscribe({
       next: () => this.categories.reload()
     })
   }
