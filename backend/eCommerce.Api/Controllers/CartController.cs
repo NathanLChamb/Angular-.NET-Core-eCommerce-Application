@@ -20,45 +20,44 @@ namespace eCommerce.Api.Controllers
         : ControllerBase
     {
         private readonly IMediator _mediator = mediator;
-        private string UserId => User.FindFirstValue(JwtRegisteredClaimNames.Sub) ?? throw new UnauthorizedAccessException();
 
-        [Authorize]
+        [AllowAnonymous]
         [HttpGet]
         public async Task<ActionResult<CartResponse>> GetCart(CancellationToken ct)
         {
-            var cart = await _mediator.Send(new GetCartQuery(UserId), ct);
+            var cart = await _mediator.Send(new GetCartQuery(), ct);
             return Ok(cart);
         }
 
-        [Authorize]
+        [AllowAnonymous]
         [HttpPost("items")]
         public async Task<ActionResult<CartResponse>> AddItem([FromBody] AddCartItemRequest request, CancellationToken ct)
         {
-            var cart = await _mediator.Send(new AddCartItemCommand(UserId, request.ProductVariantId, request.Quantity), ct);
+            var cart = await _mediator.Send(new AddCartItemCommand(request.ProductVariantId, request.Quantity), ct);
             return Ok(cart);
         }
 
-        [Authorize]
+        [AllowAnonymous]
         [HttpPut("items/{productVariantId:int}")]
         public async Task<ActionResult<CartResponse>> UpdateQuantity(int productVariantId, UpdateCartItemQuantityRequest request, CancellationToken ct)
         {
-            var cart = await _mediator.Send(new UpdateCartItemQuantityCommand(UserId, productVariantId, request.Quantity), ct);
+            var cart = await _mediator.Send(new UpdateCartItemQuantityCommand(productVariantId, request.Quantity), ct);
             return Ok(cart);
         }
 
-        [Authorize]
+        [AllowAnonymous]
         [HttpDelete("items/{productVariantId:int}")]
         public async Task<ActionResult<CartResponse>> RemoveItem(int productVariantId, CancellationToken ct)
         {
-            var cart = await _mediator.Send(new RemoveCartItemCommand(UserId, productVariantId), ct);
+            var cart = await _mediator.Send(new RemoveCartItemCommand(productVariantId), ct);
             return Ok(cart);
         }
 
-        [Authorize]
+        [AllowAnonymous]
         [HttpDelete]
         public async Task<ActionResult<CartResponse>> ClearCart(CancellationToken ct)
         {
-            var cart = await _mediator.Send(new ClearCartCommand(UserId), ct);
+            var cart = await _mediator.Send(new ClearCartCommand(), ct);
             return Ok(cart);
         }
     }

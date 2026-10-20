@@ -4,6 +4,5 @@ using MediatR;
 namespace eCommerce.Application.Features.Cart.Queries.GetCart
 {
     public record GetCartQuery(
-        string UserId
     ) : IRequest<CartResponse>;
 }

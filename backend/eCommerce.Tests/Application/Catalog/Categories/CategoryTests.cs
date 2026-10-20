@@ -1,6 +1,6 @@
 ﻿using eCommerce.Domain.Catalog.Categories;
 
-namespace eCommerce.Tests.Catalog.Categories
+namespace eCommerce.Tests.Application.Catalog.Categories
 {
     public class CategoryTests
     {

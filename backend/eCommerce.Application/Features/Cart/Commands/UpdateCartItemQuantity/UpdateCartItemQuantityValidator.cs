@@ -6,9 +6,6 @@ namespace eCommerce.Application.Features.Cart.Commands.UpdateCartItemQuantity
     {
         public UpdateCartItemQuantityValidator()
         {
-            RuleFor(x => x.UserId)
-                .NotEmpty();
-
             RuleFor(x => x.ProductVariantId)
                 .NotEmpty();
 
