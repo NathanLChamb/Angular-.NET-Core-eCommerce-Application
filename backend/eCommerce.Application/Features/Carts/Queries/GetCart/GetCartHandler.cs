@@ -1,9 +1,9 @@
-﻿using eCommerce.Application.Features.Cart.DTOs;
+﻿using eCommerce.Application.Features.Carts.DTOs;
 using eCommerce.Application.Interfaces;
 using eCommerce.Application.Interfaces.Queries;
 using MediatR;
 
-namespace eCommerce.Application.Features.Cart.Queries.GetCart
+namespace eCommerce.Application.Features.Carts.Queries.GetCart
 {
     public class GetCartHandler(
         ICartQueries queries, 

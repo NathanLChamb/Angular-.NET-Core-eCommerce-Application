@@ -1,38 +1,43 @@
 ﻿using eCommerce.Application.Exceptions;
-using eCommerce.Application.Features.Cart.DTOs;
+using eCommerce.Application.Features.Carts.DTOs;
 using eCommerce.Application.Interfaces;
 using eCommerce.Application.Interfaces.Queries;
 using eCommerce.Application.Interfaces.Repositories;
 using MediatR;
 
-namespace eCommerce.Application.Features.Cart.Commands.UpdateCartItemQuantity
+namespace eCommerce.Application.Features.Carts.Commands.RemoveCartItem
 {
-    public class UpdateCartItemQuantityHandler(
+    public class RemoveCartItemHandler(
         ICartRepository carts, 
-        ICartQueries queries, 
         ICurrentUser user, 
-        IUnitOfWork unitOfWork) 
-        : IRequestHandler<UpdateCartItemQuantityCommand, CartResponse>
+        IUnitOfWork unitOfWork, 
+        ICartQueries queries) 
+        : IRequestHandler<RemoveCartItemCommand, CartResponse>
     {
         private readonly ICartRepository _carts = carts;
-        private readonly ICartQueries _queries = queries;
         private readonly ICurrentUser _user = user;
         private readonly IUnitOfWork _unitOfWork = unitOfWork;
+        private readonly ICartQueries _queries = queries;
 
         public async Task<CartResponse> Handle(
-            UpdateCartItemQuantityCommand request,
+            RemoveCartItemCommand request,
             CancellationToken ct)
         {
             var cart = await _carts.GetAsync(
-                _user.UserId, _user.AnonymousId, ct)
+                _user.UserId, 
+                _user.AnonymousId, 
+                ct)
                 ?? throw new NotFoundException(
                     "Cart not found from provided ID");
 
-            cart.UpdateItem(request.ProductVariantId, request.Quantity);
+            cart.RemoveItem(request.ProductVariantId);
 
             await _unitOfWork.SaveChangesAsync(ct);
 
-            return await _queries.GetCartDetailsAsync(_user.UserId, _user.AnonymousId, ct)
+            return await _queries.GetCartDetailsAsync(
+                _user.UserId, 
+                _user.AnonymousId, 
+                ct)
                 ?? throw new InvalidOperationException(
                     "Cart not found");
         }

@@ -1,4 +1,4 @@
-﻿using eCommerce.Application.Features.Cart.DTOs;
+﻿using eCommerce.Application.Features.Carts.DTOs;
 using eCommerce.Application.Interfaces.Queries;
 using eCommerce.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;

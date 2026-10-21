@@ -1,11 +1,11 @@
 ﻿using eCommerce.Application.Exceptions;
-using eCommerce.Application.Features.Cart.DTOs;
+using eCommerce.Application.Features.Carts.DTOs;
 using eCommerce.Application.Interfaces;
 using eCommerce.Application.Interfaces.Queries;
 using eCommerce.Application.Interfaces.Repositories;
 using MediatR;
 
-namespace eCommerce.Application.Features.Cart.Commands.ClearCart
+namespace eCommerce.Application.Features.Carts.Commands.ClearCart
 {
     public class ClearCartHandler(
         ICartRepository carts, 

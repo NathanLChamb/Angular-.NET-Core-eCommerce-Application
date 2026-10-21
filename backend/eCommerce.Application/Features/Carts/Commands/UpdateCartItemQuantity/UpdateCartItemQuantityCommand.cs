@@ -1,7 +1,7 @@
-﻿using eCommerce.Application.Features.Cart.DTOs;
+﻿using eCommerce.Application.Features.Carts.DTOs;
 using MediatR;
 
-namespace eCommerce.Application.Features.Cart.Commands.UpdateCartItemQuantity
+namespace eCommerce.Application.Features.Carts.Commands.UpdateCartItemQuantity
 {
     public record UpdateCartItemQuantityCommand(
         int ProductVariantId,

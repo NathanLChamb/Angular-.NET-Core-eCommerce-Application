@@ -74,6 +74,7 @@ namespace eCommerce.Infrastructure.DependencyInjection
             services.AddScoped<ITokenService, TokenService>();
             services.AddScoped<IdentitySeeder>();
             services.AddScoped<ICurrentUser, CurrentUser>();
+            services.AddScoped<IAnonymousCartSession, AnonymousCartSession>();
 
             services.AddScoped<ICartQueries, CartQueries>();
             services.AddScoped<IProductQueries, ProductQueries>();

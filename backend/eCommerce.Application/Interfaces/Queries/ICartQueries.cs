@@ -1,4 +1,4 @@
-﻿using eCommerce.Application.Features.Cart.DTOs;
+﻿using eCommerce.Application.Features.Carts.DTOs;
 
 namespace eCommerce.Application.Interfaces.Queries
 {

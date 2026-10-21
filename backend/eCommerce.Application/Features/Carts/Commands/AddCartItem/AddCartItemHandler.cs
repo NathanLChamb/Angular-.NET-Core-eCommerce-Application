@@ -1,5 +1,5 @@
 ﻿using eCommerce.Application.Exceptions;
-using eCommerce.Application.Features.Cart.DTOs;
+using eCommerce.Application.Features.Carts.DTOs;
 using eCommerce.Application.Interfaces;
 using eCommerce.Application.Interfaces.Queries;
 using eCommerce.Application.Interfaces.Repositories;
@@ -7,7 +7,7 @@ using eCommerce.Domain.Carts.ValueObjects;
 using eCommerce.Domain.Catalog.ProductVariants.ValueObjects;
 using MediatR;
 
-namespace eCommerce.Application.Features.Cart.Commands.AddCartItem
+namespace eCommerce.Application.Features.Carts.Commands.AddCartItem
 {
     public class AddCartItemHandler(
         ICartRepository carts, 

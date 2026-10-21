@@ -54,7 +54,10 @@ namespace eCommerce.Domain.Carts
             }
             else
             {
-                _items.Add(new CartItem(productVariantId, product, quantity, unitPrice));
+                var productCopy = new ProductSnapshot(product.ProductName, product.Sku, product.Image?.ToString());
+                var priceCopy = new Price(unitPrice.Amount);
+
+                _items.Add(new CartItem(productVariantId, productCopy, quantity, priceCopy));
             }
 
             Touch();
@@ -118,6 +121,39 @@ namespace eCommerce.Domain.Carts
                     nameof(productVariantId));
 
             return item;
+        }
+
+        public void MergeFrom(Cart anonymousCart)
+        {
+            ArgumentNullException.ThrowIfNull(anonymousCart);
+
+            if (ReferenceEquals(this, anonymousCart))
+            {
+                throw new InvalidOperationException(
+                    "A cart cannot be merged into itself.");
+            }
+
+            if (string.IsNullOrWhiteSpace(UserId))
+            {
+                throw new InvalidOperationException(
+                    "The destination cart must belong to an authenticated user.");
+            }
+
+            if (anonymousCart.AnonymousId is null ||
+                !string.IsNullOrWhiteSpace(anonymousCart.UserId))
+            {
+                throw new InvalidOperationException(
+                    "The source cart must belong to an anonymous session.");
+            }
+
+            foreach (var item in anonymousCart.Items)
+            {
+                AddItem(
+                    item.ProductVariantId,
+                    item.Product,
+                    item.Quantity,
+                    item.UnitPrice);
+            }
         }
 
         private void Touch()

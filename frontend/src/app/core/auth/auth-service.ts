@@ -41,7 +41,7 @@ export class AuthService {
   login(credentials: LoginRequest) {
 
     return this.http
-      .post<AuthResponse>(`${this.authUrl}/login`, credentials)
+      .post<AuthResponse>(`${this.authUrl}/login`, credentials, { withCredentials: true })
       .pipe(
         tap(response => {
 

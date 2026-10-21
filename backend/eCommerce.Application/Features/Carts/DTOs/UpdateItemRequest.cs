@@ -1,4 +1,4 @@
-﻿namespace eCommerce.Application.Features.Cart.DTOs
+﻿namespace eCommerce.Application.Features.Carts.DTOs
 {
     public class UpdateItemRequest
     {
